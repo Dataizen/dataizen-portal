@@ -17,6 +17,14 @@ function Liens({ links, className }) {
   );
 }
 
+// Offre de source (AGPL §13) : lien vers le code source public de la plateforme.
+// Le catalogue CKAN est sous AGPL, qui impose que l'utilisateur puisse obtenir le
+// code source correspondant. Pointe vers l'organisation qui héberge tous les dépôts.
+const SOURCE_URL = 'https://github.com/Dataizen';
+const SourceLink = () => (
+  <a className="footer-source" href={SOURCE_URL} target="_blank" rel="noopener">Code source</a>
+);
+
 export default function SiteFooter({ links = [], text, dsfr = false }) {
   if (dsfr) {
     return (
@@ -25,6 +33,7 @@ export default function SiteFooter({ links = [], text, dsfr = false }) {
           <Liens links={links} className="footer-menu" />
           <div className="fr-footer__bottom">
             <div className="fr-footer__bottom-copy"><p>{text}</p></div>
+            <SourceLink />
           </div>
         </div>
       </footer>
@@ -33,7 +42,7 @@ export default function SiteFooter({ links = [], text, dsfr = false }) {
   return (
     <footer className="site" role="contentinfo">
       <Liens links={links} className="footer-menu" />
-      <p className="footer-copy">{text}</p>
+      <p className="footer-copy">{text} · <SourceLink /></p>
     </footer>
   );
 }
