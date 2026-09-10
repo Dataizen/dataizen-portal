@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { getDataset, getDatasetPrivileged, previewDatastore, CKAN_PUBLIC, listLicenses } from '../../../lib/ckan';
+import { getDataset, getDatasetPrivileged, previewDatastore, previewDatastorePrivileged, CKAN_PUBLIC, listLicenses } from '../../../lib/ckan';
 import { getReusesForDataset } from '../../../lib/directus';
 import { getSession, isAdmin } from '../../../lib/session';
 import { METADATA_FIELDS, extrasToObject } from '../../../lib/metadata';
@@ -91,7 +91,11 @@ export default async function FicheDataset({ params }) {
   const isOwner = !!session && extras.depose_par === session.email;
   if (d.private && !admin && !isOwner) notFound();
   const resDatastore = (d.resources || []).find((r) => r.datastore_active);
-  const preview = resDatastore ? await previewDatastore(resDatastore.id, 25) : null;
+  // Jeu privé (déjà réservé à l'admin/déposant ci-dessus) : aperçu via le jeton d'édition,
+  // car l'aperçu public ne peut pas lire une ressource privée.
+  const preview = resDatastore
+    ? (d.private ? await previewDatastorePrivileged(resDatastore.id, 25) : await previewDatastore(resDatastore.id, 25))
+    : null;
   const reuses = await getReusesForDataset(name);
   const gristUrl = process.env.NEXT_PUBLIC_GRIST_URL;
   const canEdit = admin || isOwner;
