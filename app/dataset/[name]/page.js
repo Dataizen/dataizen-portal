@@ -26,7 +26,7 @@ export const dynamic = 'force-dynamic';
 
 // Services OGC pour ce dataset ? (pygeoapi, cache 5 min). Renvoie aussi
 // l'emprise (bbox 4326 "minlon,minlat,maxlon,maxlat") pour cadrer l'aperçu WMS.
-async function collectionGeo(name) {
+async function collectionGeo(name, needItems = true) {
   const geo = process.env.NEXT_PUBLIC_GEO_URL;
   if (!geo) return { ok: false, bbox: '', hasGeometry: false };
   try {
@@ -36,16 +36,25 @@ async function collectionGeo(name) {
     const b = c?.extent?.spatial?.bbox?.[0];
     const bbox = Array.isArray(b) && b.length >= 4 ? [b[0], b[1], b[2], b[3]].join(',') : '';
     // Une collection pygeoapi peut exister SANS géométrie (table indexée par code, ex.
-    // portrait par commune). Dans ce cas la carte s'afficherait vide. On vérifie donc
-    // qu'au moins une entité porte une géométrie non nulle (un seul item suffit, cache 5 min).
+    // portrait par commune) : on vérifie alors qu'au moins une entité porte une géométrie.
+    // MAIS ce sondage des items déclenche un COUNT complet côté pygeoapi (100 s+ sur une
+    // collection de millions de lignes, qui bloquait le rendu de la fiche) : on ne le fait que
+    // si l'appelant le demande (aucune couche OGC ne prouve déjà la géo) ET on le borne par un
+    // timeout court (au-delà, la carte reste possible via la couche OGC / la détection datastore).
     let hasGeometry = false;
-    try {
-      const ir = await fetch(`${geo}/collections/${name}/items?f=json&limit=1`, { next: { revalidate: 300 } });
-      if (ir.ok) {
-        const j = await ir.json();
-        hasGeometry = (j?.features || []).some((f) => f && f.geometry);
-      }
-    } catch { /* sans preuve de géométrie, on ne propose pas la carte */ }
+    if (needItems) {
+      try {
+        const ctrl = new AbortController();
+        const to = setTimeout(() => ctrl.abort(), 4000);
+        const ir = await fetch(`${geo}/collections/${name}/items?f=json&limit=1`,
+          { cache: 'no-store', signal: ctrl.signal });
+        clearTimeout(to);
+        if (ir.ok) {
+          const j = await ir.json();
+          hasGeometry = (j?.features || []).some((f) => f && f.geometry);
+        }
+      } catch { /* timeout ou erreur : on ne bloque pas la fiche */ }
+    }
     return { ok: true, bbox, hasGeometry };
   } catch {
     return { ok: false, bbox: '', hasGeometry: false };
@@ -96,7 +105,14 @@ export default async function FicheDataset({ params }) {
   const gristUrl = process.env.NEXT_PUBLIC_GRIST_URL;
   const canEdit = admin || isOwner;
   const licenses = canEdit ? await listLicenses() : [];
-  const geo = await collectionGeo(d.name);
+  // Une ressource a-t-elle une couche OGC (mapfile MapServer) ? Le job géo pose wms_url/wfs_url
+  // dès qu'une colonne géométrie (Geo Shape/WKT/…) a été géométrisée : la carte de fiche sert
+  // alors la couche WMS en TUILES (rendu serveur du seul visible), même pour des millions de tracés.
+  const hasOgcLayer = (d.resources || []).some((r) => r.wms_url || r.wfs_url);
+  // On ne sonde les ITEMS pygeoapi (pour prouver une géométrie) que si AUCUNE couche OGC n'existe :
+  // sur une grosse collection ce sondage déclenche un COUNT complet côté pygeoapi (100 s+ sur
+  // testlm1, 7,8 M lignes), qui bloquait tout le rendu de la fiche. La couche OGC prouve déjà la géo.
+  const geo = await collectionGeo(d.name, !hasOgcLayer);
   const geoOk = geo.ok;
   const geoHasGeometry = geo.hasGeometry;   // collection pygeoapi réellement géométrique
   const hasGeojson = (d.resources || []).some((r) =>
@@ -104,10 +120,6 @@ export default async function FicheDataset({ params }) {
   // Détection des données géographiques du datastore (nom + échantillon de contenu) :
   // points lat/lon ou colonne « lat, lon », colonne géométrie WKT/GeoJSON (ex. « Geo Shape »).
   const geoDet = detectGeo(preview);
-  // Une ressource a-t-elle une couche OGC (mapfile MapServer) ? Le job géo pose wms_url/wfs_url
-  // dès qu'une colonne géométrie (Geo Shape/WKT/…) a été géométrisée : la carte de fiche sert
-  // alors la couche WMS en TUILES (rendu serveur du seul visible), même pour des millions de tracés.
-  const hasOgcLayer = (d.resources || []).some((r) => r.wms_url || r.wfs_url);
   // Carte affichable : points lat/lon, couche OGC (WMS/WFS du mapfile), service pygeoapi, ou GeoJSON.
   const carteAffichable = !!geoDet.pair || hasOgcLayer || (geoOk && geoHasGeometry) || hasGeojson;
   const geoUrl = process.env.NEXT_PUBLIC_GEO_URL;
