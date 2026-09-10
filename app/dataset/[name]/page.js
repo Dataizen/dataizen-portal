@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { getDataset, getDatasetPrivileged, previewDatastore, previewDatastorePrivileged, CKAN_PUBLIC, listLicenses } from '../../../lib/ckan';
+import { detectGeo } from '../../../lib/geo';
 import { getReusesForDataset } from '../../../lib/directus';
 import { getSession, isAdmin } from '../../../lib/session';
 import { METADATA_FIELDS, extrasToObject } from '../../../lib/metadata';
@@ -21,12 +22,6 @@ import DeleteDataset from '../../../components/DeleteDataset';
 
 export const dynamic = 'force-dynamic';
 
-const COLS_LAT = ['latitude', 'lat', 'y_lat'];
-const COLS_LON = ['longitude', 'lon', 'lng', 'x_lon'];
-function estGeo(preview) {
-  const f = (preview?.fields || []).map((x) => x.id.toLowerCase());
-  return f.some((c) => COLS_LAT.includes(c)) && f.some((c) => COLS_LON.includes(c));
-}
 
 // Services OGC pour ce dataset ? (pygeoapi, cache 5 min). Renvoie aussi
 // l'emprise (bbox 4326 "minlon,minlat,maxlon,maxlat") pour cadrer l'aperçu WMS.
@@ -105,6 +100,14 @@ export default async function FicheDataset({ params }) {
   const geoHasGeometry = geo.hasGeometry;   // collection pygeoapi réellement géométrique
   const hasGeojson = (d.resources || []).some((r) =>
     (r.format || '').toLowerCase() === 'geojson' || /\.geojson(\?|$)/i.test(r.url || ''));
+  // Détection des données géographiques du datastore (nom + échantillon de contenu) :
+  // points lat/lon ou colonne « lat, lon », colonne géométrie WKT/GeoJSON (ex. « Geo Shape »).
+  const geoDet = detectGeo(preview);
+  // Carte affichable seulement pour ce que la route carte sait réellement rendre :
+  // points lat/lon (colonnes séparées), service OGC (pygeoapi/WMS/WFS) ou ressource GeoJSON.
+  // Une colonne « lat, lon » ou une géométrie brute en colonne (potentiellement des millions
+  // de tracés) n'est PAS rendue côté client : elle est détectée et signalée (voir la note).
+  const carteAffichable = !!geoDet.pair || (geoOk && geoHasGeometry) || hasGeojson;
   const geoUrl = process.env.NEXT_PUBLIC_GEO_URL;
 
   // validité / péremption du jeu de données (extras validite_debut / validite_fin)
@@ -275,13 +278,25 @@ export default async function FicheDataset({ params }) {
         </p>
       )}
 
-      {(estGeo(preview) || (geoOk && geoHasGeometry) || hasGeojson) && (
+      {carteAffichable && (
         <div>
           <h3>Carte</h3>
           <div className="dtz-carte" data-fiche={d.name} role="img"
                aria-label="Carte du jeu de données, sources sélectionnables" />
           <p className="meta">Sources sélectionnables (boutons en haut à gauche) : carte GeoJSON, points des données, services WMS et WFS.</p>
         </div>
+      )}
+
+      {/* Géométrie détectée en colonne (WKT/GeoJSON) mais pas encore servie en carte :
+          on le signale plutôt que d'afficher une carte vide. Le rendu à l'échelle passe
+          par la publication en service OGC (WMS/WFS MapServer). */}
+      {!carteAffichable && (geoDet.geomCol || geoDet.pointCol) && (
+        <p className="meta" style={{ color: '#0f766e' }}>
+          🗺️ Ce jeu contient des données géographiques
+          {geoDet.geomCol ? <> : colonne «&nbsp;{geoDet.geomCol}&nbsp;» (géométries WKT/GeoJSON)</> : null}
+          {geoDet.pointCol ? <>{geoDet.geomCol ? ' et ' : ' : '}colonne «&nbsp;{geoDet.pointCol}&nbsp;» (points «&nbsp;lat, lon&nbsp;»)</> : null}.
+          La cartographie de ces données (potentiellement des millions de tracés) sera disponible une fois publiées en service OGC.
+        </p>
       )}
 
       {resDatastore && preview?.records?.length ? (
