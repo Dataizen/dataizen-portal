@@ -113,8 +113,13 @@ export async function GET(request) {
       activable: true, couleur: '#1e7a46' });
     if (wmsHasLayer) pousser({ type: 'wms', url: `${CKAN_PUB}/wms/${org}`, couche: wmsCouche,
       label: 'Service WMS', activable: true, couleur: '#1e7a46' });
-    if (wfsType) pousser({ type: 'wfs', url: wfsBase, couche: wfsType,
-      label: 'Service WFS', activable: true, couleur: '#c2571a' });
+    // Le WFS charge les entités vectorielles CÔTÉ CLIENT : on ne le propose comme couche de carte
+    // que pour un PETIT jeu (au-delà, le client tenterait de charger des dizaines de milliers /
+    // millions d'entités et n'afficherait rien, cf. testlm1). Le rendu serveur WMS reste la couche
+    // d'affichage pour les gros jeux ; le service WFS demeure accessible par son URL pour les SIG.
+    const WFS_MAP_MAX = 5000;
+    if (wfsType && geoTotal > 0 && geoTotal <= WFS_MAP_MAX) pousser({ type: 'wfs', url: wfsBase,
+      couche: wfsType, label: 'Service WFS', activable: true, couleur: '#c2571a' });
 
     if (!couches.length) return NextResponse.json({ error: 'aucune source géo' }, { status: 404 });
 
