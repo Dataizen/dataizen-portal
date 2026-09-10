@@ -104,11 +104,12 @@ export default async function FicheDataset({ params }) {
   // Détection des données géographiques du datastore (nom + échantillon de contenu) :
   // points lat/lon ou colonne « lat, lon », colonne géométrie WKT/GeoJSON (ex. « Geo Shape »).
   const geoDet = detectGeo(preview);
-  // Carte affichable seulement pour ce que la route carte sait réellement rendre :
-  // points lat/lon (colonnes séparées), service OGC (pygeoapi/WMS/WFS) ou ressource GeoJSON.
-  // Une colonne « lat, lon » ou une géométrie brute en colonne (potentiellement des millions
-  // de tracés) n'est PAS rendue côté client : elle est détectée et signalée (voir la note).
-  const carteAffichable = !!geoDet.pair || (geoOk && geoHasGeometry) || hasGeojson;
+  // Une ressource a-t-elle une couche OGC (mapfile MapServer) ? Le job géo pose wms_url/wfs_url
+  // dès qu'une colonne géométrie (Geo Shape/WKT/…) a été géométrisée : la carte de fiche sert
+  // alors la couche WMS en TUILES (rendu serveur du seul visible), même pour des millions de tracés.
+  const hasOgcLayer = (d.resources || []).some((r) => r.wms_url || r.wfs_url);
+  // Carte affichable : points lat/lon, couche OGC (WMS/WFS du mapfile), service pygeoapi, ou GeoJSON.
+  const carteAffichable = !!geoDet.pair || hasOgcLayer || (geoOk && geoHasGeometry) || hasGeojson;
   const geoUrl = process.env.NEXT_PUBLIC_GEO_URL;
 
   // validité / péremption du jeu de données (extras validite_debut / validite_fin)

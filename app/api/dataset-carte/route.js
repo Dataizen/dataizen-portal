@@ -36,9 +36,11 @@ export async function GET(request) {
       } catch { /* emprise optionnelle */ }
     }
 
-    // typename WFS : première FeatureType ms:res_... des capacités (si dispo)
+    // Mapfile MapServer du jeu (généré par la chaîne géo, y compris pour une géométrie EN
+    // COLONNE du datastore). On lit ses capacités WMS ET WFS : le nom de couche est `res_<rid>`.
+    const mapBase = `/mapserver/mapfiles/${name}.map`;
     let wfsType = '';
-    const wfsBase = `${CKAN_PUB}/wfs?map=/mapserver/mapfiles/${name}.map`;
+    const wfsBase = `${CKAN_PUB}/wfs?map=${mapBase}`;
     try {
       const cap = await fetch(`${wfsBase}&SERVICE=WFS&VERSION=2.0.0&REQUEST=GetCapabilities`,
         { next: { revalidate: 300 } });
@@ -47,6 +49,19 @@ export async function GET(request) {
         wfsType = (xml.match(/<Name>(ms:res_[a-z0-9_]+)<\/Name>/i) || [])[1] || '';
       }
     } catch { /* WFS optionnel */ }
+
+    // Couche WMS servie par CE mapfile (rendu SERVEUR, tuiles filtrées par l'emprise) :
+    // c'est la voie « on ne charge que le visible », indispensable pour des millions de tracés.
+    let wmsMapLayer = '';
+    const wmsMapBase = `${CKAN_PUB}/wms?map=${mapBase}`;
+    try {
+      const wc = await fetch(`${wmsMapBase}&SERVICE=WMS&VERSION=1.3.0&REQUEST=GetCapabilities`,
+        { next: { revalidate: 300 } });
+      if (wc.ok) {
+        const xml = await wc.text();
+        wmsMapLayer = (xml.match(/<Name>(res_[a-z0-9_]+)<\/Name>/i) || [])[1] || '';
+      }
+    } catch { /* WMS optionnel */ }
 
     // La couche « Points (données) » n'a de sens que si le datastore porte des colonnes
     // de coordonnées ; sinon elle s'afficherait vide (cas d'une table par code commune).
@@ -95,6 +110,10 @@ export async function GET(request) {
     };
     if (geoRes) pousser({ type: 'geojson', geojson_rid: geoRes.id, label: 'Carte',
       activable: true, couleur: '#2f5496' });
+    // Rendu SERVEUR en tuiles (n'affiche que le visible) : couche par défaut dès qu'un mapfile
+    // WMS existe. C'est la bonne voie pour les gros volumes (millions de géométries en colonne).
+    if (wmsMapLayer) pousser({ type: 'wms', url: wmsMapBase, couche: wmsMapLayer,
+      label: 'Carte (rendu serveur)', activable: true, couleur: '#1e7a46' });
     if (rid && hasCoords) pousser({ type: 'catalogue', dataset: rid, label: 'Points (données)',
       activable: true, couleur: '#1e7a46' });
     if (wmsHasLayer) pousser({ type: 'wms', url: `${CKAN_PUB}/wms/${org}`, couche: wmsCouche,
