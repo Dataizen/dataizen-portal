@@ -41,6 +41,10 @@ const ResumableFile = forwardRef(function ResumableFile({ onFileSelected }, ref)
     uppy.use(Dashboard, {
       target: elRef.current, inline: true, height: 260, width: '100%',
       proudlyDisplayPoweredByUppy: false,
+      // On MASQUE le bouton d'upload natif d'Uppy : le dépôt est déclenché par le bouton
+      // du formulaire (qui fixe l'endpoint tusd + le ticket signé via ref.upload()). Sans
+      // ça, cliquer le bouton natif lançait tus avec un endpoint vide -> erreur pour l'usager.
+      hideUploadButton: true,
       note: "Glissez votre fichier ici (jusqu'à 10 Go). La reprise est automatique en cas de coupure.",
     });
     const onAdd = (file) => cbRef.current && cbRef.current(file.data, file.name);

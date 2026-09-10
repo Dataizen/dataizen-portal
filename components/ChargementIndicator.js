@@ -42,7 +42,7 @@ export default function ChargementIndicator({ resourceId, initialActive }) {
   if (etat === 'error') {
     return (
       <p className="meta" style={{ color: '#b91c1c' }}>
-        ⚠️ Le chargement des données a échoué. Le fichier reste téléchargeable ; vous pouvez retenter via « Mettre à jour les données ».
+        ⚠️ Le fichier est bien déposé et téléchargeable ; c'est sa mise en table exploitable (aperçu, filtres, API) qui a échoué. Vous pouvez la relancer via « Mettre à jour les données ».
       </p>
     );
   }
