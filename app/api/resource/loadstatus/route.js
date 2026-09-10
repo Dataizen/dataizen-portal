@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 
-// Statut de chargement datastore d'une ressource (pour l'indicateur « traitement en
-// cours » de la fiche). Combine datastore_active (prêt ?) et xloader_status (job en
-// cours / échec). Lecture seule, sans effet de bord.
+// Statut des TRAITEMENTS d'une ressource (pour l'indicateur « traitement en cours » de la
+// fiche). Combine : chargement datastore (datastore_active + xloader_status) et préparation
+// cartographique (géométrisation en colonne, extras `dtz_geo_*`). Lecture seule.
 export const runtime = 'nodejs';
 
 const CKAN = process.env.CKAN_INTERNAL_URL || 'http://ckan:5000';
@@ -22,7 +22,8 @@ export async function GET(request) {
   if (!rid) return NextResponse.json({ error: 'rid requis' }, { status: 400 });
 
   const rs = await ckan('resource_show', { id: rid });
-  const active = !!rs.result?.datastore_active;
+  const r = rs.result || {};
+  const active = !!r.datastore_active;
 
   let status = 'unknown';
   let error = '';
@@ -32,5 +33,13 @@ export async function GET(request) {
     const e = st.result.error;
     error = typeof e === 'string' ? e : (e && e.message) || '';
   }
-  return NextResponse.json({ active, status, error });
+  // Préparation cartographique (géométrisation d'une colonne géo) : états posés par le job ogc.
+  const geo = {
+    status: r.dtz_geo_status || '',   // detecting|geometrizing|ready|none|error
+    done: r.dtz_geo_done || '',
+    total: r.dtz_geo_total || '',
+    kind: r.dtz_geo_kind || '',
+    col: r.dtz_geo_col || '',
+  };
+  return NextResponse.json({ active, status, error, geo });
 }

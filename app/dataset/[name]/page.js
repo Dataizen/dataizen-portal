@@ -19,6 +19,7 @@ import ValidateButton from '../../../components/ValidateButton';
 import TerritoryLink from '../../../components/TerritoryLink';
 import DatasetUsages from '../../../components/DatasetUsages';
 import DeleteDataset from '../../../components/DeleteDataset';
+import GeoReprocess from '../../../components/GeoReprocess';
 
 export const dynamic = 'force-dynamic';
 
@@ -258,7 +259,7 @@ export default async function FicheDataset({ params }) {
               <> · <a href={`${CKAN_PUBLIC}/api/3/action/datastore_search?resource_id=${r.id}&limit=100`}>API datastore</a></>
             )}
           </p>
-          {r.url_type === 'upload' && !r.datastore_active && (
+          {r.url_type === 'upload' && (!r.datastore_active || ['detecting', 'geometrizing', 'error'].includes(r.dtz_geo_status)) && (
             <ChargementIndicator resourceId={r.id} initialActive={r.datastore_active} />
           )}
           {r.datastore_active && gristUrl && session && (
@@ -291,12 +292,19 @@ export default async function FicheDataset({ params }) {
           on le signale plutôt que d'afficher une carte vide. Le rendu à l'échelle passe
           par la publication en service OGC (WMS/WFS MapServer). */}
       {!carteAffichable && (geoDet.geomCol || geoDet.pointCol) && (
-        <p className="meta" style={{ color: '#0f766e' }}>
-          🗺️ Ce jeu contient des données géographiques
-          {geoDet.geomCol ? <> : colonne «&nbsp;{geoDet.geomCol}&nbsp;» (géométries WKT/GeoJSON)</> : null}
-          {geoDet.pointCol ? <>{geoDet.geomCol ? ' et ' : ' : '}colonne «&nbsp;{geoDet.pointCol}&nbsp;» (points «&nbsp;lat, lon&nbsp;»)</> : null}.
-          La cartographie de ces données (potentiellement des millions de tracés) sera disponible une fois publiées en service OGC.
-        </p>
+        <div>
+          <p className="meta" style={{ color: '#0f766e' }}>
+            🗺️ Ce jeu contient des données géographiques
+            {geoDet.geomCol ? <> : colonne «&nbsp;{geoDet.geomCol}&nbsp;» (géométries WKT/GeoJSON)</> : null}
+            {geoDet.pointCol ? <>{geoDet.geomCol ? ' et ' : ' : '}colonne «&nbsp;{geoDet.pointCol}&nbsp;» (points «&nbsp;lat, lon&nbsp;»)</> : null}.
+            {' '}La carte est servie côté serveur (rendu de l'emprise visible) après préparation des géométries.
+          </p>
+          {canEdit && <p><GeoReprocess name={d.name} /></p>}
+        </div>
+      )}
+
+      {carteAffichable && canEdit && (
+        <p className="meta"><GeoReprocess name={d.name} /></p>
       )}
 
       {resDatastore && preview?.records?.length ? (
