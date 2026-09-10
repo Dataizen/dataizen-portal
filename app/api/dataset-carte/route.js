@@ -13,7 +13,12 @@ export async function GET(request) {
     return NextResponse.json({ error: 'dataset invalide' }, { status: 400 });
   }
   try {
-    const pr = await fetch(`${CKAN_INT}/api/3/action/package_show?id=${name}`, { next: { revalidate: 120 } });
+    // Jeton d'édition : permet de servir la carte d'un jeu PRIVÉ (brouillon) à son
+    // déposant / à un admin (la fiche a déjà vérifié le droit avant d'appeler cette route).
+    const pr = await fetch(`${CKAN_INT}/api/3/action/package_show?id=${name}`, {
+      headers: process.env.CKAN_EDIT_TOKEN ? { Authorization: process.env.CKAN_EDIT_TOKEN } : {},
+      cache: 'no-store',
+    });
     if (!pr.ok) return NextResponse.json({ error: 'introuvable' }, { status: 404 });
     const pkg = (await pr.json()).result;
     const org = pkg.organization?.name;
