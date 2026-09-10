@@ -37,31 +37,26 @@ export async function GET(request) {
     }
 
     // Mapfile MapServer du jeu (généré par la chaîne géo, y compris pour une géométrie EN
-    // COLONNE du datastore). On lit ses capacités WMS ET WFS : le nom de couche est `res_<rid>`.
+    // COLONNE du datastore). Noms de couches DÉTERMINISTES : on NE fait PAS de GetCapabilities
+    // (un GetCapabilities recalcule l'emprise de la couche via ST_Extent sur toute la table, soit
+    // plusieurs secondes sur un jeu de millions de lignes, x2 pour WMS+WFS : c'était la cause
+    // principale de la lenteur de la fiche). La ressource géo porte wms_url/wfs_url et dtz_geo_total.
     const mapBase = `/mapserver/mapfiles/${name}.map`;
-    let wfsType = '';
     const wfsBase = `${CKAN_PUB}/wfs?map=${mapBase}`;
-    try {
-      const cap = await fetch(`${wfsBase}&SERVICE=WFS&VERSION=2.0.0&REQUEST=GetCapabilities`,
-        { next: { revalidate: 300 } });
-      if (cap.ok) {
-        const xml = await cap.text();
-        wfsType = (xml.match(/<Name>(ms:res_[a-z0-9_]+)<\/Name>/i) || [])[1] || '';
-      }
-    } catch { /* WFS optionnel */ }
-
-    // Couche WMS servie par CE mapfile (rendu SERVEUR, tuiles filtrées par l'emprise) :
-    // c'est la voie « on ne charge que le visible », indispensable pour des millions de tracés.
-    let wmsMapLayer = '';
     const wmsMapBase = `${CKAN_PUB}/wms?map=${mapBase}`;
-    try {
-      const wc = await fetch(`${wmsMapBase}&SERVICE=WMS&VERSION=1.3.0&REQUEST=GetCapabilities`,
-        { next: { revalidate: 300 } });
-      if (wc.ok) {
-        const xml = await wc.text();
-        wmsMapLayer = (xml.match(/<Name>(res_[a-z0-9_]+)<\/Name>/i) || [])[1] || '';
-      }
-    } catch { /* WMS optionnel */ }
+    const geoColRes = (pkg.resources || []).find((r) => r.wms_url || r.wfs_url)
+      || (pkg.resources || []).find((r) => r.datastore_active);
+    const ridU = geoColRes?.id ? String(geoColRes.id).replace(/-/g, '_') : '';
+    const geoTotal = Number(geoColRes?.dtz_geo_total || 0);
+    // Au-delà de ce seuil, le mapfile sert deux couches à échelle (détail `res_<rid>_hi` au zoom
+    // serré + aperçu `res_<rid>_ov` au dézoom) regroupées sous le groupe WMS `res_<rid>`.
+    const OVERVIEW_MIN = 200000;
+    // WMS : le client demande le groupe `res_<rid>` (rend le détail ou l'aperçu selon l'échelle) ;
+    // pour un petit jeu c'est la couche unique du même nom. WFS : la couche détail.
+    const wmsMapLayer = geoColRes?.wms_url && ridU ? `res_${ridU}` : '';
+    const wfsType = geoColRes?.wfs_url && ridU
+      ? (geoTotal > OVERVIEW_MIN ? `ms:res_${ridU}_hi` : `ms:res_${ridU}`)
+      : '';
 
     // La couche « Points (données) » n'a de sens que si le datastore porte des colonnes
     // de coordonnées ; sinon elle s'afficherait vide (cas d'une table par code commune).
