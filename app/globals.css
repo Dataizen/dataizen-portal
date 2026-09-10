@@ -1,0 +1,569 @@
+:root {
+  --bleu: #1d3a5f;
+  --bleu-clair: #2f5d8f;
+  --fond: #f6f8fa;
+  --bordure: #dde3ea;
+  --texte: #1c2430;
+  --texte-2: #5a6572;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: var(--texte);
+  background: var(--fond);
+}
+a { color: var(--bleu-clair); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+header.site {
+  background: var(--bleu);
+  color: #fff;
+  padding: 0.7rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+/* En-tête collé en haut de page (thème standard comme DSFR) */
+.dtz-sticky { position: sticky; top: 0; z-index: 100; }
+header.site .logo { font-size: 1.25rem; font-weight: 700; color: #fff; }
+header.site nav ul.menu { list-style: none; display: flex; gap: 0.2rem; margin: 0; padding: 0; flex-wrap: wrap; }
+header.site nav ul.menu > li { position: relative; }
+header.site nav a {
+  color: #dde6f0; padding: 0.45rem 0.7rem; border-radius: 6px; display: inline-block;
+}
+header.site nav a:hover, header.site nav a:focus-visible { color: #fff; background: rgba(255, 255, 255, 0.12); text-decoration: none; }
+/* page courante (aria-current posé par MenuA11y) : soulignement dans la couleur
+   héritée (marche sur en-tête foncé comme clair) + léger gras. Les thèmes
+   peuvent renforcer le repère (ex. accent jaune du thème brutal). */
+header.site nav a[aria-current="page"] { box-shadow: inset 0 -3px 0 currentColor; font-weight: 700; }
+.fr-nav__link[aria-current="page"] { font-weight: 700; }
+/* Sous-menus accessibles : visibles au survol ET au focus clavier (focus-within) */
+.a-sous-menu > a::after { content: " ▾"; font-size: 0.7em; }
+.sous-menu {
+  display: none; position: absolute; top: 100%; left: 0; min-width: 220px;
+  list-style: none; margin: 0; padding: 0.4rem; background: #fff;
+  border: 1px solid var(--bordure); border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12); z-index: 110;
+}
+.a-sous-menu:hover .sous-menu, .a-sous-menu:focus-within .sous-menu { display: block; }
+.sous-menu a { display: block; color: var(--texte); padding: 0.45rem 0.7rem; border-radius: 6px; }
+.sous-menu a:hover, .sous-menu a:focus-visible { background: var(--fond); color: var(--bleu); }
+
+main { max-width: 1280px; margin: 0 auto; padding: 1.5rem; }
+/* conteneur élargi (moins de bandes blanches) mais texte à longueur de ligne
+   confortable : les paragraphes et listes gardent une mesure lisible, tandis que
+   cartes, grilles, tableaux et cartes géographiques occupent toute la largeur. */
+main p, main li { max-width: 78ch; }
+
+/* carte-sélecteur de territoire (facette catalogue) */
+.dtz-facette-territoire { margin-bottom: 0.5rem; }
+.facette-carte { height: 230px; border-radius: 8px; overflow: hidden; border: 1px solid var(--bordure, #e3e3ea); }
+.facette-carte-controles { display: flex; gap: 0.3rem; margin-bottom: 0.4rem; }
+.facette-carte-controles button {
+  font-size: 0.8rem; padding: 0.2rem 0.65rem; border: 1px solid var(--bordure, #e3e3ea);
+  border-radius: 6px; background: #fff; cursor: pointer;
+}
+.facette-carte-controles button[aria-pressed="true"] { background: var(--bleu, #2f5496); color: #fff; border-color: var(--bleu, #2f5496); }
+.facette-dom { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; margin-top: 0.4rem; }
+.facette-dom-chip {
+  font-size: 0.78rem; padding: 0.15rem 0.55rem; border: 1px solid var(--bordure, #e3e3ea);
+  border-radius: 999px; background: #fff; cursor: pointer;
+}
+.facette-dom-chip.vide { opacity: 0.5; }
+.facette-dom-chip[aria-pressed="true"] { background: #c2571a; color: #fff; border-color: #c2571a; }
+
+/* bloc « Recherche d'indicateur » */
+.rech-indic-champ { width: 100%; margin-bottom: 0.6rem; }
+.rech-indic-liste { display: flex; flex-direction: column; gap: 0.3rem; max-height: 22rem; overflow: auto; }
+.rech-indic-item {
+  display: flex; align-items: baseline; gap: 0.6rem; text-align: left;
+  padding: 0.45rem 0.7rem; border: 1px solid var(--bordure, #e3e3ea); border-radius: 8px;
+  background: #fff; cursor: pointer; width: 100%;
+}
+.rech-indic-item:hover, .rech-indic-item:focus-visible { border-color: var(--bleu, #2f5496); background: var(--fond, #f6f7fb); }
+.rech-indic-item .ri-lib { font-weight: 600; flex: 1; }
+.rech-indic-item .ri-meta { color: var(--texte-2, #66707d); font-size: 0.85rem; }
+.rech-indic-item.non-carto { opacity: 0.7; }
+main .defilable p, main figure p, main .carte.pleine p { max-width: none; }
+footer.site { text-align: center; color: var(--texte-2); padding: 2rem; font-size: 0.85rem; }
+
+/* indicateur d'état du GPU souverain : badge discret en bas à gauche (à l'opposé
+   du bouton assistant), visible de tous. .dtz-gpu-control = version encadrée admin. */
+.dtz-gpu-badge { position: fixed; left: 1rem; bottom: 1rem; z-index: 900;
+  background: #fff; border: 1px solid var(--bordure, #d9e0e6); border-radius: 999px;
+  padding: 0.25rem 0.7rem; font-size: 0.78rem; color: var(--texte-2, #556);
+  box-shadow: 0 1px 4px rgba(16, 30, 54, 0.08); opacity: 0.85; }
+.dtz-gpu-badge:hover { opacity: 1; }
+.dtz-gpu-marche { border-color: #b7e0c0; }
+.dtz-gpu-demarre { border-color: #ffe0a3; }
+.dtz-gpu-control { margin: 0 0 1rem; }
+/* mobile : on garde le badge visible (plus compact), remonté pour ne pas être caché
+   par le bandeau cookies en bas de l'écran */
+@media (max-width: 640px) {
+  .dtz-gpu-badge { left: 0.5rem; bottom: 0.5rem; font-size: 0.72rem; padding: 0.2rem 0.55rem; opacity: 0.95; }
+}
+
+/* bandeau d'aperçu d'un brouillon (oeil Directus, admin connecté) */
+.dtz-apercu { margin: 0 0 0.75rem; padding: 0.5rem 0.9rem; border-radius: 6px; font-size: 0.9rem;
+  background: #fff3cd; color: #664d03; border: 1px solid #ffe69c; }
+/* affordances réservées à l'éditeur visuel Directus (masquées pour les visiteurs) */
+.dtz-edit-only { display: none; }
+.dtz-editing .dtz-edit-only { display: block; }
+/* point d'insertion « ＋ Ajouter un bloc ici » entre deux blocs */
+.dtz-inserer { width: 100%; margin: 0.25rem 0; padding: 0.35rem; border: 1px dashed var(--primaire, #4a5a66);
+  border-radius: 6px; background: color-mix(in srgb, var(--primaire, #4a5a66) 6%, #fff);
+  color: var(--primaire, #4a5a66); font-weight: 600; font-size: 0.85rem; cursor: pointer;
+  opacity: 0.5; transition: opacity 0.15s; }
+.dtz-inserer:hover, .dtz-inserer:focus { opacity: 1; background: var(--primaire, #4a5a66); color: #fff; }
+
+/* menu de pied de page réutilisable (toutes instances) */
+.footer-menu ul { list-style: none; margin: 0 0 0.8rem; padding: 0; display: flex; flex-wrap: wrap;
+  gap: 0.5rem 1.5rem; justify-content: center; }
+.footer-menu a { color: inherit; text-decoration: none; }
+.footer-menu a:hover, .footer-menu a:focus { text-decoration: underline; }
+.footer-copy { margin: 0; }
+.fr-footer .footer-menu ul { justify-content: flex-start; padding: 1rem 0; }
+
+.layout { display: grid; grid-template-columns: 240px 1fr; gap: 1.5rem; }
+@media (max-width: 800px) { .layout { grid-template-columns: 1fr; } }
+
+.carte {
+  background: #fff;
+  border: 1px solid var(--bordure);
+  border-radius: 8px;
+  padding: 1rem 1.2rem;
+  margin-bottom: 0.8rem;
+}
+.carte h3 { margin: 0 0 0.3rem; }
+.carte .meta { color: var(--texte-2); font-size: 0.85rem; }
+
+.facette h4 { margin: 0.8rem 0 0.3rem; font-size: 0.85rem; text-transform: uppercase; color: var(--texte-2); }
+.facette ul { list-style: none; margin: 0; padding: 0; font-size: 0.92rem; }
+.facette li { padding: 0.15rem 0; }
+.facette .actif { font-weight: 700; }
+
+.recherche { display: flex; gap: 0.5rem; margin-bottom: 1.2rem; }
+.recherche input {
+  flex: 1; padding: 0.6rem 0.9rem; border: 1px solid var(--bordure);
+  border-radius: 6px; font-size: 1rem;
+}
+.recherche button {
+  padding: 0.6rem 1.2rem; background: var(--bleu); color: #fff;
+  border: 0; border-radius: 6px; font-size: 1rem; cursor: pointer;
+}
+
+.badge {
+  display: inline-block; background: #e8eef5; color: var(--bleu);
+  border-radius: 4px; padding: 0.1rem 0.5rem; font-size: 0.78rem; margin-right: 0.4rem;
+}
+table.donnees { border-collapse: collapse; width: 100%; font-size: 0.88rem; background: #fff; }
+table.donnees th, table.donnees td { border: 1px solid var(--bordure); padding: 0.4rem 0.6rem; text-align: left; }
+table.donnees th { background: #eef2f6; }
+.defilable { overflow-x: auto; }
+.badge.perime { background: #fdecea; color: #a3271a; border-color: #f3c2bb; }
+/* validité / péremption d'un jeu de données */
+.validite { display: inline-block; margin: 0.3rem 0 0.7rem; padding: 0.4rem 0.9rem;
+  border-radius: 999px; font-weight: 600; font-size: 0.9rem; }
+.validite.valide { background: #e7f5ee; color: #1c6b45; border: 1px solid #b9e0cc; }
+.validite.attente { background: #eef3f8; color: #2f5473; border: 1px solid #cdd9e6; }
+.validite.perime { background: #fdecea; color: #a3271a; border: 1px solid #f3c2bb; }
+dl.fiche { display: grid; grid-template-columns: 180px 1fr; row-gap: 0.4rem; }
+dl.fiche dt { color: var(--texte-2); }
+dl.fiche dd { margin: 0; }
+.pagination { margin-top: 1rem; display: flex; gap: 1rem; }
+/* Contenus embarqués (Evidence, Superset, Grist) : grande hauteur adaptée à
+   l'écran (dvh = tient compte des barres mobiles), un seul ascenseur (interne),
+   plein écran à la demande. .embed est ajouté par EmbedTools. */
+iframe.evidence { display: block; width: 100%; height: 82vh; height: 82dvh; min-height: 560px;
+  border: 1px solid var(--bordure); border-radius: 10px; background: #fff; }
+.embed { margin: 0.4rem 0 1.2rem; }
+.embed__bar { display: flex; justify-content: flex-end; gap: 0.5rem; margin-bottom: 0.4rem; }
+.embed__btn { font-size: 0.85rem; padding: 0.25rem 0.7rem; border: 1px solid var(--bordure);
+  border-radius: 999px; background: #fff; color: var(--texte); cursor: pointer; text-decoration: none;
+  line-height: 1.7; }
+.embed__btn:hover { background: #eef2f6; }
+.embed:fullscreen { background: #fff; padding: 0; margin: 0; }
+.embed:fullscreen .embed__bar { position: absolute; top: 0.6rem; right: 0.8rem; z-index: 2; margin: 0; }
+.embed:fullscreen iframe { height: 100dvh; min-height: 100dvh; width: 100%; border: 0; border-radius: 0; }
+header.site .session { margin-left: auto; color: #cdd9e8; font-size: 0.85rem; }
+header.site .session a { color: #fff; }
+.bouton-admin {
+  padding: 0.35rem 0.8rem; background: #fff; color: var(--bleu);
+  border: 1px solid var(--bleu-clair); border-radius: 6px; cursor: pointer; font-size: 0.9rem;
+}
+.bouton-admin:hover { background: var(--bleu); color: #fff; }
+.bouton-admin.secondaire { border-color: var(--bordure); color: var(--texte-2); }
+.edition label { display: block; font-weight: 600; margin-top: 0.6rem; }
+.edition input, .edition textarea, .edition select {
+  width: 100%; padding: 0.5rem; border: 1px solid var(--bordure); border-radius: 6px; font: inherit; box-sizing: border-box; background: #fff;
+}
+.edition input[type="file"] { border: 1px dashed var(--bordure); }
+/* Mapper DOLFIN : grille libellé -> sélecteur de colonne */
+.dolfin-mapper { display: grid; grid-template-columns: 160px 1fr; gap: 0.4rem 0.8rem; align-items: center; max-width: 620px; margin: 0.6rem 0; }
+.dolfin-mapper label { display: contents; font-weight: 600; }
+.dolfin-mapper select { width: 100%; padding: 0.4rem; border: 1px solid var(--bordure); border-radius: 6px; font: inherit; background: #fff; }
+@media (max-width: 640px) { .dolfin-mapper { grid-template-columns: 1fr; } }
+
+/* Accueil par blocs (mise en page pilotée par Directus, collection home_blocks) */
+.hero {
+  background: var(--bleu); color: #fff; border-radius: 12px;
+  padding: 2.5rem 2rem; margin-bottom: 1.5rem;
+}
+.hero h1 { margin: 0 0 0.5rem; color: #fff; }
+.hero a { color: #fff; }
+.bloc { margin: 2rem 0; }
+.chiffres { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; }
+.chiffre {
+  background: #fff; border: 1px solid var(--bordure); border-radius: 10px;
+  padding: 1.2rem; text-align: center;
+}
+.chiffre strong { display: block; font-size: 1.7rem; color: var(--bleu); }
+.chiffre span { color: var(--texte-2); }
+.themes { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.badge.theme { font-size: 0.95rem; padding: 0.45rem 0.9rem; text-decoration: none; }
+.vitrines { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; }
+.carte.vitrine { display: block; text-decoration: none; color: inherit; }
+.carte.vitrine:hover { border-color: var(--bleu); }
+
+/* Logo d'en-tête (URL définie dans Directus, Réglages du portail) */
+header.site .logo { display: flex; align-items: center; gap: 0.6rem; }
+header.site .logo-img { height: 34px; width: auto; display: block; }
+
+
+/* Accessibilité (RGAA) : lien d'évitement, focus visible, mouvement réduit */
+.acces-rapide {
+  position: absolute; left: -9999px; top: 0; z-index: 200;
+  background: #fff; color: var(--bleu); padding: 0.6rem 1rem; border-radius: 0 0 8px 0;
+}
+.acces-rapide:focus { left: 0; }
+:focus-visible { outline: 3px solid var(--bleu-clair); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+
+/* Contenu de page riche (WYSIWYG Directus : images, tableaux, citations…) */
+article.carte { padding: 1.6rem 2rem; }
+article.carte img { max-width: 100%; height: auto; border-radius: 8px; }
+article.carte table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+article.carte table th, article.carte table td {
+  border: 1px solid var(--bordure); padding: 0.5rem 0.7rem; text-align: left;
+}
+article.carte table th { background: #eef2f6; }
+article.carte blockquote {
+  border-left: 4px solid var(--bleu-clair); margin: 1rem 0; padding: 0.4rem 1rem;
+  color: var(--texte-2); background: var(--fond); border-radius: 0 8px 8px 0;
+}
+article.carte figure { margin: 1rem 0; }
+article.carte figcaption { color: var(--texte-2); font-size: 0.85rem; }
+article.carte hr { border: 0; border-top: 1px solid var(--bordure); margin: 1.5rem 0; }
+
+/* Modernisation générale */
+h1 { font-size: 1.9rem; line-height: 1.25; }
+h2 { font-size: 1.4rem; margin-top: 2rem; }
+.carte { box-shadow: 0 1px 3px rgba(16, 30, 54, 0.06); border-radius: 10px; }
+.carte:hover { box-shadow: 0 2px 8px rgba(16, 30, 54, 0.09); }
+main { padding: 2rem 1.5rem 3rem; }
+
+/* Ajustements du thème DSFR (en-tête collé, session, sous-menus) */
+body.dsfr .fr-header__tools-links.session { font-size: 0.85rem; }
+body.dsfr .fr-nav__item { position: relative; }
+body.dsfr .sous-menu { background: #fff; }
+
+/* Cartes (MapLibre) et thématiques */
+.dtz-carte { height: 420px; border: 1px solid var(--bordure); border-radius: 10px; background: #eef2f6; overflow: hidden; }
+/* Aperçus intégrés en iframe (fiches Directus) : masque l'habillage du portail.
+   Variante « plein » = plein cadre (cartes) ; variante « flux » = flux normal
+   défilable (graphiques, dont la table peut être haute). */
+body:has(.dtz-embed) { margin: 0; background: #fff; }
+body:has(.dtz-embed) > header,
+body:has(.dtz-embed) > footer,
+body:has(.dtz-embed) > .acces-rapide { display: none !important; }
+body:has(.dtz-embed) > main { padding: 0; margin: 0; max-width: none; }
+.dtz-embed.plein { position: fixed; inset: 0; }
+.dtz-embed.plein .dtz-carte { height: 100%; border: 0; border-radius: 0; }
+.dtz-embed.flux { padding: 12px; }
+/* Tableau de bord territorial (carte-sélecteur + panneau filtré) */
+.dtz-territoire { margin: 0.6rem 0 1.4rem; }
+.terr-niveaux { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.6rem; }
+.terr-niveaux button { font-size: 0.9rem; font-weight: 600; padding: 0.35rem 1rem; border: 1px solid var(--bleu);
+  border-radius: 999px; background: #fff; color: var(--bleu); cursor: pointer; }
+.terr-niveaux button[aria-pressed="true"] { background: var(--bleu); color: #fff; }
+/* sélecteur compact : onglets de catégorie + indicateurs de la catégorie active */
+.terr-metriques { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.6rem; align-items: stretch; }
+.terr-metrique-groupe { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+.terr-metrique-theme { display: inline-block; min-width: 150px; font-size: 0.72rem; text-transform: uppercase;
+  letter-spacing: 0.04em; color: var(--texte-2); }
+.terr-metriques button { font-size: 0.85rem; padding: 0.3rem 0.8rem; border: 1px solid var(--bordure);
+  border-radius: 999px; background: #fff; color: var(--texte); cursor: pointer; }
+.terr-metriques button[aria-pressed="true"] { background: var(--bleu); color: #fff; border-color: var(--bleu); }
+/* rangée d'onglets de catégorie : compacte, repliée sur plusieurs lignes si besoin */
+.terr-cat-onglets { display: flex; flex-wrap: wrap; gap: 0.35rem; padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--bordure); }
+.terr-cat-onglet { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.03em;
+  padding: 0.28rem 0.7rem; color: var(--texte-2); }
+.terr-cat-onglet[aria-pressed="true"] { background: var(--bleu); color: #fff; border-color: var(--bleu); }
+/* indicateurs de la seule catégorie active */
+.terr-metrique-actif { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+.terr-grille { display: grid; grid-template-columns: 1.4fr 1fr; gap: 1rem; align-items: stretch; }
+.terr-grille.sans-panneau { grid-template-columns: 1fr; }
+.bloc-image { margin: 0; }
+.bloc-image figcaption { color: var(--texte-2); font-size: 0.9rem; margin-top: 0.4rem; }
+.terr-carte { height: 460px; border: 1px solid var(--bordure); border-radius: 12px; overflow: hidden; background: #eef3f8; }
+.terr-panneau { border: 1px solid var(--bordure); border-radius: 12px; padding: 1rem 1.1rem; background: #fff; }
+.terr-panneau h3 { margin: 0 0 0.1rem; }
+.terr-reset { border: 0; background: none; color: var(--bleu-clair); cursor: pointer; font: inherit; padding: 0; text-decoration: underline; }
+.terr-theme { margin: 1rem 0 0.2rem; font-size: 0.78rem; text-transform: uppercase;
+  letter-spacing: 0.05em; color: var(--texte-2); border-bottom: 1px solid var(--bordure); padding-bottom: 0.2rem; }
+.terr-tuiles { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin: 0.5rem 0 0.8rem; }
+.terr-tuile { border: 1px solid var(--bordure); border-radius: 10px; padding: 0.6rem 0.7rem; border-top: 4px solid var(--bleu-clair); }
+.terr-tuile strong { display: block; font-size: 1.35rem; color: var(--bleu); line-height: 1.1; }
+.terr-tuile span { font-size: 0.8rem; color: var(--texte-2); }
+.terr-chart { width: 100%; height: 260px; }
+.terr-rang { color: #c2571a; font-weight: 700; }
+.terr-vedette { border-top-width: 5px; margin: 0.6rem 0; }
+.terr-vedette strong { font-size: 2rem; }
+/* Section catégorie sous la carte : grande bannière + indicateurs du thème choisi */
+.terr-categorie { margin: 1.4rem 0 0.4rem; }
+.terr-cat-banniere { background: var(--bleu); color: #fff; border-radius: 10px;
+  padding: 0.7rem 1.1rem; font-size: 1.35rem; font-weight: 700; letter-spacing: -0.01em; }
+.terr-cat-tuiles { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+.terr-superset { margin-top: 1.2rem; }
+.terr-superset-lien { display: inline-block; padding: 0.7rem 1.1rem; border-radius: 10px;
+  background: var(--bleu); color: #fff; text-decoration: none; font-weight: 600; }
+.terr-superset-lien:hover { background: var(--bleu-clair); }
+@media (max-width: 820px) { .terr-grille { grid-template-columns: 1fr; } }
+/* Constructeur de pages par blocs : grille 6 colonnes, blocs côte à côte */
+.blocs-grille { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1.4rem; align-items: start; margin: 0.4rem 0; }
+.blocs-grille .bloc { grid-column: span 6; min-width: 0; }
+.blocs-grille .bloc.moitie { grid-column: span 3; }
+.blocs-grille .bloc.tiers { grid-column: span 2; }
+.blocs-grille .bloc.deux-tiers { grid-column: span 4; }
+.blocs-grille .bloc-titre { margin: 0.2rem 0 0.6rem; }
+@media (max-width: 820px) {
+  .blocs-grille .bloc, .blocs-grille .bloc.moitie,
+  .blocs-grille .bloc.tiers, .blocs-grille .bloc.deux-tiers { grid-column: span 6; }
+}
+
+.graphique-toile { width: 100%; height: 380px; }
+/* lien discret vers la fiche du jeu de données, sous graphes et cartes */
+.source-lien { margin: 0.3rem 0 0.8rem; font-size: 0.78rem; color: var(--texte-2); }
+.source-lien a { color: var(--texte-2); text-decoration: none; border-bottom: 1px dotted currentColor; }
+.source-lien a::before { content: "↗ "; }
+.source-lien a:hover { color: var(--bleu); }
+.graphique-vide { display: flex; align-items: center; justify-content: center; min-height: 120px;
+  border: 1px dashed var(--bordure); border-radius: 10px; text-align: center; padding: 1rem; }
+.graphique-table { margin-top: 0.4rem; }
+.graphique-table summary { cursor: pointer; color: var(--texte-2); font-size: 0.9rem; }
+.carte.vitrine.thematique h3 { margin-bottom: 0.3rem; }
+
+/* Sous-menus : le texte doit rester sombre sur fond blanc (spécificité) */
+header.site nav .sous-menu a { color: var(--texte); background: transparent; }
+header.site nav .sous-menu a:hover, header.site nav .sous-menu a:focus-visible { background: var(--fond); color: var(--bleu); }
+
+/* ===== Refonte visuelle 0.8 : site moderne, vivant et sobre (RGESN) ===== */
+.hero {
+  background:
+    radial-gradient(1100px 380px at 88% -60%, rgba(255, 255, 255, 0.16), transparent 60%),
+    radial-gradient(700px 320px at -10% 120%, rgba(255, 255, 255, 0.10), transparent 55%),
+    linear-gradient(115deg, var(--bleu) 0%, var(--bleu-clair) 100%);
+  padding: 3.2rem 2.4rem;
+  border-radius: 16px;
+}
+.hero h1 { font-size: 2.3rem; letter-spacing: -0.02em; line-height: 1.15; }
+.chiffre strong { font-size: 2.1rem; letter-spacing: -0.02em; }
+.chiffre {
+  border: 0; box-shadow: 0 1px 3px rgba(16, 30, 54, 0.08);
+  border-top: 4px solid var(--bleu-clair); transition: transform 0.25s ease;
+}
+.chiffre:hover { transform: translateY(-3px); }
+.carte.vitrine { transition: transform 0.25s ease, box-shadow 0.25s ease; }
+.carte.vitrine:hover { transform: translateY(-4px); box-shadow: 0 8px 22px rgba(16, 30, 54, 0.13); }
+
+/* bannières des pages éditoriales */
+.page-editoriale { padding: 0; overflow: hidden; }
+.page-editoriale > div:not(.banniere) { padding: 1.4rem 2rem 2rem; }
+.banniere {
+  min-height: 190px; display: flex; align-items: flex-end;
+  background-size: cover; background-position: center;
+  padding: 1.6rem 2rem;
+}
+.banniere h1 { color: #fff; margin: 0; font-size: 2.1rem; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35); }
+
+/* actualités illustrées */
+.carte.actu { overflow: hidden; }
+.actu-img { width: calc(100% + 2.4rem); margin: -1rem -1.2rem 0.8rem; display: block; height: 180px; object-fit: cover; }
+article.carte.actu .actu-img { width: calc(100% + 4rem); margin: 0 -2rem 1rem; height: 260px; }
+
+/* révélation au défilement (désactivée si prefers-reduced-motion) */
+.a-reveler { opacity: 0; transform: translateY(14px); transition: opacity 0.5s ease, transform 0.5s ease; }
+.revele { opacity: 1; transform: none; }
+
+/* contrôles des cartes MapLibre */
+.dtz-carte { position: relative; height: 480px; }
+.dtz-carte-controles {
+  position: absolute; top: 10px; left: 10px; z-index: 5;
+  display: flex; flex-direction: column; gap: 0.4rem; max-width: 240px;
+}
+.dtz-carte-controles .groupe {
+  background: rgba(255, 255, 255, 0.95); border: 1px solid var(--bordure);
+  border-radius: 8px; padding: 0.3rem; display: flex; flex-wrap: wrap; gap: 0.25rem;
+}
+.dtz-carte-controles button {
+  border: 1px solid var(--bordure); background: #fff; border-radius: 6px;
+  padding: 0.25rem 0.55rem; font-size: 0.78rem; cursor: pointer; color: var(--texte);
+}
+.dtz-carte-controles button[aria-pressed="true"] { background: var(--bleu); color: #fff; border-color: var(--bleu); }
+.dtz-carte-controles button:focus-visible { outline: 3px solid var(--bleu-clair); outline-offset: 1px; }
+.dtz-carte-note {
+  position: absolute; bottom: 10px; left: 10px; right: 10px; z-index: 5; margin: 0;
+  background: rgba(255, 255, 255, 0.95); border: 1px solid var(--bordure);
+  border-radius: 8px; padding: 0.35rem 0.55rem; font-size: 0.74rem; line-height: 1.35;
+}
+
+/* Actualité en pleine page */
+.chapo { font-size: 1.15rem; color: var(--texte-2); line-height: 1.6; }
+
+/* Bandeau de consentement aux cookies (composant CookieConsent, toutes instances).
+   Se cale sur la couleur de marque (--bleu) pour s'adapter à chaque instance. */
+.dtz-cookies {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 1000;
+  display: flex; gap: 1rem; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; padding: 0.85rem 1.2rem;
+  background: var(--bleu, #1f4e79); color: #fff;
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.18); font-size: 0.9rem;
+}
+.dtz-cookies-txt { max-width: 70ch; line-height: 1.4; }
+.dtz-cookies-txt a { color: #fff; text-decoration: underline; }
+.dtz-cookies-actions { display: flex; gap: 0.6rem; flex-shrink: 0; }
+.dtz-cookies button { cursor: pointer; border-radius: 6px; padding: 0.5rem 1rem; font-weight: 600; border: 1px solid #fff; }
+.dtz-cookies-refuser { background: transparent; color: #fff; }
+.dtz-cookies-accepter { background: #fff; color: var(--bleu, #1f4e79); }
+.dtz-cookies button:hover { opacity: 0.9; }
+
+/* Encart flottant du hero (bloc Hero, config.encart) : carte/lien en haut à
+   droite, ex. « Atlas implantation ». Réutilisable ; passe en pleine largeur
+   sous le titre sur mobile. */
+.hero { position: relative; }
+.hero-encart {
+  position: absolute; top: 1rem; right: 1rem; width: 260px; max-width: 38%;
+  display: block; background: rgba(255, 255, 255, 0.95); color: var(--texte, #1c2430);
+  border-radius: 8px; padding: 0.8rem 0.9rem; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+  font-size: 0.85rem; line-height: 1.35; z-index: 2;
+}
+.hero-encart span { text-decoration: underline; }
+.hero-encart img { display: block; width: 100%; border-radius: 4px; margin-top: 0.55rem; }
+.hero-encart:hover { text-decoration: none; }
+@media (max-width: 760px) {
+  .hero-encart { position: static; width: auto; max-width: none; margin-top: 1.2rem; }
+}
+
+/* Modèle de page « rapport » (RapportLayout) : fil d'Ariane, titre centré,
+   pagination entre sections, 2 colonnes texte / visualisation. */
+.page-rapport { padding: 1.5rem 2rem 2.5rem; }
+.rapport .rap-fil { font-size: 0.85rem; color: var(--texte-2); margin-bottom: 1.5rem; }
+.rapport .rap-fil a { color: var(--texte-2); }
+.rapport .rap-fil strong { color: var(--texte); }
+.rap-titre { text-align: center; font-size: 2.3rem; margin: 0.2rem 0 1.4rem; }
+.rap-intro { max-width: 70ch; margin: 0 auto 1.2rem; color: var(--texte-2); }
+.rap-pager { display: flex; align-items: center; justify-content: center; gap: 0.4rem; margin: 0 0 1.8rem; flex-wrap: wrap; }
+.rap-pager .rap-nav { background: none; border: 0; color: var(--texte-2); cursor: pointer; padding: 0.4rem 0.6rem; font-size: 0.9rem; }
+.rap-pager .rap-nav:disabled { opacity: 0.4; cursor: default; }
+.rap-pager .rap-num { width: 2.1rem; height: 2.1rem; border: 1px solid var(--bordure); background: #fff;
+  border-radius: 6px; cursor: pointer; font-weight: 600; color: var(--texte); }
+.rap-pager .rap-num.actif { background: var(--bleu-clair); border-color: var(--bleu-clair); color: #2b333a; }
+.rap-section { display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem; align-items: start; }
+.rap-gauche h2 { margin-top: 0; }
+.rap-gauche p, .rap-droite p { max-width: none; }
+.rap-droite .rap-info { font-weight: 700; color: var(--texte); margin-bottom: 1rem; }
+.rap-droite .rap-info p { font-weight: 700; margin: 0 0 0.6rem; }
+.rap-gauche .rap-texte p { margin: 0 0 0.8rem; }
+.rap-gauche .rap-texte ul { margin: 0 0 0.9rem; padding-left: 1.2rem; }
+.rap-gauche .rap-texte li { margin: 0.2rem 0; }
+.rap-viz { border: 1px solid var(--bordure); border-radius: 8px; overflow: hidden; background: #fff; }
+@media (max-width: 900px) { .rap-section { grid-template-columns: 1fr; gap: 1.4rem; } .rap-titre { font-size: 1.8rem; } }
+
+/* Logos dans un bloc texte de l'accueil (ex. pied partenaires) : taille maîtrisée,
+   centrés (évite un logo démesuré en bas de page). */
+.bloc p img { max-height: 72px; width: auto; display: inline-block; vertical-align: middle; margin: 0.4rem 0.6rem; }
+
+/* filet séparateur entre les 2 colonnes du modèle rapport (comme OFER) */
+@media (min-width: 901px) {
+  .rap-section .rap-droite { border-left: 1px solid var(--bordure); padding-left: 2.5rem; }
+}
+
+/* page contributeurs : liste EPCI en colonnes, logos d'agences alignés */
+.liste-epci { columns: 3; column-gap: 2rem; list-style: none; padding: 0; margin: 1rem 0 2rem;
+  font-size: 0.95rem; }
+.liste-epci li { break-inside: avoid; padding: 0.15rem 0; border-bottom: 1px solid var(--bordure); }
+@media (max-width: 900px) { .liste-epci { columns: 2; } }
+@media (max-width: 560px) { .liste-epci { columns: 1; } }
+.logos-partenaires { display: flex; flex-wrap: wrap; gap: 2rem; align-items: center; margin: 1.2rem 0; }
+.logos-partenaires img { max-height: 90px; width: auto; margin: 0; }
+
+/* glossaire : index alphabétique simple (ancres) + liste de définitions */
+.glossaire-nav { position: sticky; top: 0; z-index: 1; display: flex; flex-wrap: wrap; gap: 0.3rem;
+  padding: 0.6rem 0.4rem; margin: 0 0 1.5rem; background: var(--fond, #fff);
+  border-bottom: 1px solid var(--bordure); }
+.glossaire-nav a { display: inline-flex; min-width: 1.9rem; height: 1.9rem; align-items: center;
+  justify-content: center; border: 1px solid var(--bordure); border-radius: 4px; font-weight: 600;
+  text-decoration: none; color: var(--primaire, #4a5a66); }
+.glossaire-nav a:hover, .glossaire-nav a:focus { background: var(--primaire, #4a5a66); color: #fff; }
+.page-editoriale h3[id^="lettre-"] { scroll-margin-top: 3.5rem; margin: 1.8rem 0 0.6rem;
+  color: var(--secondaire, #e0a200); border-bottom: 2px solid var(--secondaire, #e0a200);
+  display: inline-block; padding: 0 0.4rem 0.1rem; }
+dl.glossaire { margin: 0 0 1rem; }
+dl.glossaire dt { font-weight: 700; margin: 0.9rem 0 0.2rem; }
+dl.glossaire dd { margin: 0 0 0.4rem; padding-left: 1rem; border-left: 2px solid var(--bordure); }
+
+/* dictionnaire des indicateurs : tableau lisible, en-tête figé */
+.table-indicateurs { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.95rem; }
+.table-indicateurs th, .table-indicateurs td { text-align: left; padding: 0.5rem 0.8rem;
+  border-bottom: 1px solid var(--bordure); vertical-align: top; }
+.table-indicateurs thead th { position: sticky; top: 0; background: var(--primaire, #4a5a66);
+  color: #fff; z-index: 1; }
+.table-indicateurs tbody tr:nth-child(even) { background: rgba(0, 0, 0, 0.03); }
+.table-indicateurs td code { font-size: 0.9em; white-space: nowrap; }
+
+/* légende d'une choroplèthe (constructeur de cartes) */
+.dtz-legende-choro { position: absolute; bottom: 14px; right: 10px; z-index: 2; background: rgba(255,255,255,0.92);
+  border: 1px solid var(--bordure, #d9dde2); border-radius: 6px; padding: 6px 9px; font-size: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12); max-width: 220px; }
+.dtz-legende-titre { font-weight: 700; margin-bottom: 4px; color: #2b333a; }
+.dtz-legende-barre { height: 10px; border-radius: 3px; border: 1px solid rgba(0,0,0,0.1); }
+.dtz-legende-bornes { display: flex; justify-content: space-between; color: #555; margin-top: 2px; }
+
+/* vidéo YouTube (bloc réutilisable) : ratio 16:9 responsive */
+.dtz-youtube { position: relative; width: 100%; aspect-ratio: 16 / 9; margin: 1rem 0; background: #000; }
+.dtz-youtube iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+@supports not (aspect-ratio: 16 / 9) {
+  .dtz-youtube { height: 0; padding-bottom: 56.25%; }
+}
+
+/* Assistant de données (widget RAG) */
+.assistant-fab { position: fixed; right: 1rem; bottom: 1rem; z-index: 1000;
+  background: var(--bleu, #1a4b8c); color: #fff; border: none; border-radius: 999px;
+  padding: 0.6rem 1rem; font-size: 0.95rem; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,.25); }
+.assistant-panel { position: fixed; right: 1rem; bottom: 1rem; z-index: 1000;
+  width: min(380px, 92vw); height: min(70vh, 560px); display: flex; flex-direction: column;
+  background: #fff; border: 1px solid #d5deea; border-radius: 10px; box-shadow: 0 4px 24px rgba(0,0,0,.25); }
+.assistant-tete { display: flex; justify-content: space-between; align-items: center;
+  padding: 0.6rem 0.8rem; border-bottom: 1px solid #eef2f7; }
+.assistant-fermer { background: none; border: none; font-size: 1rem; cursor: pointer; color: #556; }
+.assistant-corps { flex: 1; overflow-y: auto; padding: 0.8rem; display: flex; flex-direction: column; gap: 0.6rem; }
+.assistant-msg { padding: 0.5rem 0.7rem; border-radius: 8px; font-size: 0.9rem; line-height: 1.35; white-space: pre-wrap; }
+.assistant-msg.user { background: #e8eef5; align-self: flex-end; max-width: 85%; }
+.assistant-msg.ia { background: #f5f7fa; align-self: flex-start; max-width: 95%; }
+.assistant-sources { margin: 0.4rem 0 0; padding-left: 1.1rem; font-size: 0.8rem; }
+.assistant-saisie { display: flex; gap: 0.4rem; padding: 0.6rem; border-top: 1px solid #eef2f7; }
+.assistant-saisie input { flex: 1; padding: 0.45rem 0.6rem; border: 1px solid #cdd6e2; border-radius: 6px; }
+.assistant-md { font-size: 0.9rem; line-height: 1.4; }
+.assistant-md p { margin: 0 0 0.5rem; }
+.assistant-md ul { margin: 0.3rem 0 0.5rem; padding-left: 1.2rem; }
+.assistant-md li { margin: 0.15rem 0; }
+.assistant-md h3, .assistant-md h4, .assistant-md h5 { font-size: 0.95rem; margin: 0.4rem 0 0.2rem; }
+.assistant-md code { background: #eef2f7; padding: 0 0.25rem; border-radius: 3px; font-size: 0.85em; }
+.assistant-md :first-child { margin-top: 0; }
+.assistant-md :last-child { margin-bottom: 0; }

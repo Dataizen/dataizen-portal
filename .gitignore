@@ -1,0 +1,22 @@
+# Dépendances
+node_modules/
+
+# Build Next.js
+.next/
+out/
+build/
+
+# Variables d'environnement (jamais versionnées)
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# macOS / éditeurs
+.DS_Store
+._*
+.idea/
+.vscode/

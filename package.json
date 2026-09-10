@@ -1,0 +1,33 @@
+{
+  "name": "dataizen-portal",
+  "version": "0.11.19",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "next": "15.5.22",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "@gouvfr/dsfr": "1.14.4",
+    "@directus/visual-editing": "2.1.0",
+    "maplibre-gl": "4.7.1",
+    "pmtiles": "4.4.1",
+    "@uppy/core": "^4.4.0",
+    "@uppy/dashboard": "^4.3.0",
+    "@uppy/tus": "^4.2.0",
+    "@uppy/locales": "^4.5.0"
+  },
+  "comment_overrides": "Corrige des vulnérabilités de dépendances transitives (scan Trivy) : DoS/ReDoS et traversée de chemin. À revoir à chaque montée de Next.",
+  "overrides": {
+    "brace-expansion": ">=2.1.2",
+    "picomatch": ">=4.0.4",
+    "postcss": ">=8.5.18",
+    "sharp": ">=0.35.0",
+    "sigstore": ">=4.1.1",
+    "tar": ">=7.5.19"
+  }
+}
