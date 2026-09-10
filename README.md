@@ -26,5 +26,4 @@ sont figées (jamais `latest`).
 
 ## Licence
 
-MIT (voir [LICENSE](LICENSE)). Le portail est une œuvre originale Dataizen, non dérivée
-de CKAN.
+MIT (voir [LICENSE](LICENSE)). Le portail est une œuvre originale Dataizen.
