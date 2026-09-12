@@ -88,7 +88,7 @@ async function configTableauBord(el) {
                            th: i.th || 'autre', carto: i.carto ? 1 : 0, s: i.s };
       if (!ordre.includes(i.th)) ordre.push(i.th);
     }
-    return { niveaux: cfg.niveaux, indic, themes: ordre.map((t) => [t, t]) };
+    return { niveaux: cfg.niveaux, indic, themes: ordre.map((t) => [t, t]), ensemble: cfg.ensemble || '' };
   } catch { return null; }
 }
 
@@ -112,6 +112,9 @@ async function monter(el, maplibregl, echarts) {
   const niveaux = tb
     ? tb.niveaux.map((n) => ({ label: n.label, rid: n.rid, geo: n.geo, code: n.code || 'code', nom: 'nom' }))
     : niveauxDe(el);
+  // Nom de l'« ensemble » (vue avant sélection) : configurable par tableau (champ territoire),
+  // sinon attribut data-ensemble, sinon défaut historique (Bourgogne-Franche-Comté).
+  const ensemble = (tb && tb.ensemble) || el.dataset.ensemble || '';
   const lib = (k) => (indic[k] ? indic[k].l : k);
   const fmtV = (v, k) => {
     const m = indic[k] || { d: 0, u: '' };
@@ -246,9 +249,9 @@ async function monter(el, maplibregl, echarts) {
   const themeActif = () => (indic[S.metric] || {}).th || 'autre';
   const libelleTheme = (t) => (themesOrdre.find((x) => x[0] === t) || [t, t])[1];
   const titreTerr = () => (S.selection
-    ? (S.parCode[S.selection] || {})[S.nomCol] || S.selection : 'Bourgogne-Franche-Comté');
+    ? (S.parCode[S.selection] || {})[S.nomCol] || S.selection : (ensemble || 'Bourgogne-Franche-Comté'));
   const soustitreTerr = () => (S.selection ? `${S.label} · ${S.selection}`
-    : `Ensemble de la région (${S.rows.length} ${S.label.toLowerCase()})`);
+    : `Ensemble du territoire (${S.rows.length} ${S.label.toLowerCase()})`);
 
   // panneau de droite : l'indicateur choisi (big number) + le graphe comparatif
   const rendrePanneau = () => {

@@ -36,7 +36,7 @@ export async function GET(request) {
         d: Number(i.decimales) || 0, th: i.categorie || 'Autres',
         agg: i.agregation || 'sum', carto: i.cartographiable !== false, s: seuilsJson(i.seuils),
       }));
-    return NextResponse.json({ titre: t.titre, niveaux, indicateurs });
+    return NextResponse.json({ titre: t.titre, ensemble: t.territoire || '', niveaux, indicateurs });
   } catch {
     return NextResponse.json({ error: 'indisponible' }, { status: 502 });
   }
