@@ -110,7 +110,8 @@ async function monter(el, maplibregl, echarts) {
   const indic = tb ? tb.indic : INDIC_DEFAUT;
   const themesOrdre = tb ? tb.themes : THEMES_DEFAUT;
   const niveaux = tb
-    ? tb.niveaux.map((n) => ({ label: n.label, rid: n.rid, geo: n.geo, code: n.code || 'code', nom: 'nom' }))
+    ? tb.niveaux.map((n) => ({ label: n.label, rid: n.rid, geo: n.geo, code: n.code || 'code',
+                              geoCode: n.geoCode || n.code || 'code', nom: 'nom' }))
     : niveauxDe(el);
   // Nom de l'« ensemble » (vue avant sélection) : configurable par tableau (champ territoire),
   // sinon attribut data-ensemble, sinon défaut historique (Bourgogne-Franche-Comté).
