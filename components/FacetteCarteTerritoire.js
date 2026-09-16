@@ -25,7 +25,10 @@ async function monter(div, maplibregl, t) {
   let counts = {}; try { counts = JSON.parse(div.dataset.counts || '{}'); } catch { counts = {}; }
   const selDept = div.dataset.selDept || '';
   const selRegion = div.dataset.selRegion || '';
-  const gj = await fetch('/api/territoires-geo?all=1').then((r) => r.json()).catch(() => null);
+  // pays dans l'URL : évite qu'un cache navigateur d'un autre pays (ex. France, du temps
+  // où l'instance n'avait pas encore de profil pays) soit réutilisé pour ce pays.
+  const gj = await fetch(`/api/territoires-geo?all=1&pays=${encodeURIComponent(prof.pays)}`)
+    .then((r) => r.json()).catch(() => null);
   if (!gj || !gj.features?.length) { div.style.display = 'none'; return; }
   // marque chaque territoire avec son nombre de jeux (mise en avant des présents)
   for (const f of gj.features) f.properties.nb = counts[f.properties.code] || 0;
