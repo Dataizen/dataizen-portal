@@ -3,20 +3,22 @@
 // Affiché sur la fiche ; éditable par les admins et le déposant (facilitateur
 // graphique : pas de détour par l'admin CKAN). RGAA : table avec en-têtes.
 import { useState } from 'react';
+import { useT } from './I18nProvider';
 
 // Types déclarables (alignés datastore CKAN) : pilotent le cast des colonnes
 // dans les vues et les APIs générées (dtz-sync-apis), au lieu du texte brut.
 const TYPES = [
-  { v: '', label: 'auto' },
-  { v: 'text', label: 'texte' },
-  { v: 'int', label: 'entier' },
-  { v: 'numeric', label: 'décimal' },
-  { v: 'timestamp', label: 'date / heure' },
-  { v: 'bool', label: 'booléen' },
+  { v: '', k: 'dict.type_auto' },
+  { v: 'text', k: 'dict.type_text' },
+  { v: 'int', k: 'dict.type_int' },
+  { v: 'numeric', k: 'dict.type_numeric' },
+  { v: 'timestamp', k: 'dict.type_timestamp' },
+  { v: 'bool', k: 'dict.type_bool' },
 ];
-const typeLabel = (v) => TYPES.find((t) => t.v === v)?.label || 'auto';
+const typeLabel = (t, v) => t(TYPES.find((x) => x.v === v)?.k || 'dict.type_auto');
 
 export default function DataDictionary({ name, resourceId, fields, canEdit, dolfinByCol, dolfinType, dolfinSuggest }) {
+  const t = useT();
   const cols = (fields || []).filter((f) => f.id !== '_id');
   // Lien avec le schéma DOLFIN : une colonne peut porter un concept du modèle pivot.
   const hasDolfin = !!dolfinByCol && Object.keys(dolfinByCol).length > 0;
@@ -33,14 +35,14 @@ export default function DataDictionary({ name, resourceId, fields, canEdit, dolf
   const set = (id, k) => (e) => setVals({ ...vals, [id]: { ...vals[id], [k]: e.target.value } });
   const declares = cols.some((f) => f.info?.type_override);
   const save = async () => {
-    setMsg('enregistrement…');
+    setMsg(t('dict.msg_saving'));
     const r = await fetch('/api/dataset/dictionary', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, resource_id: resourceId, colonnes: cols.map((f) => ({ id: f.id, ...vals[f.id] })) }),
     });
-    if (r.ok) { setMsg('✔ enregistré'); setTimeout(() => window.location.reload(), 700); }
-    else setMsg(r.status === 401 ? 'session expirée' : 'erreur d’enregistrement');
+    if (r.ok) { setMsg(t('dict.msg_saved')); setTimeout(() => window.location.reload(), 700); }
+    else setMsg(r.status === 401 ? t('dict.msg_session_expired') : t('dict.msg_save_error'));
   };
 
   // Pré-remplit les libellés/notes VIDES des colonnes associées à un concept DOLFIN,
@@ -65,11 +67,11 @@ export default function DataDictionary({ name, resourceId, fields, canEdit, dolf
       // Message explicite : le pré-remplissage DOLFIN ne couvre QUE les colonnes mappées
       // à un concept du modèle ; les autres restent à documenter (manuel ou IA).
       const parts = [];
-      if (rempli) parts.push(`${rempli} colonne(s) pré-remplie(s) depuis DOLFIN, vérifiez puis enregistrez`);
-      else if (mappees) parts.push('les colonnes mappées à un concept DOLFIN sont déjà documentées');
-      else parts.push('aucune colonne n’est mappée à un concept DOLFIN');
-      if (dejaOk && rempli) parts.push(`${dejaOk} déjà renseignée(s)`);
-      if (sansConcept) parts.push(`${sansConcept} colonne(s) sans concept DOLFIN : à documenter à la main ou via « Compléter avec l’IA »`);
+      if (rempli) parts.push(t('dict.fill_prefilled', { n: rempli }));
+      else if (mappees) parts.push(t('dict.fill_already_doc'));
+      else parts.push(t('dict.fill_none_mapped'));
+      if (dejaOk && rempli) parts.push(t('dict.fill_already_filled', { n: dejaOk }));
+      if (sansConcept) parts.push(t('dict.fill_no_concept', { n: sansConcept }));
       setMsg(parts.join(' · '));
       return next;
     });
@@ -77,13 +79,13 @@ export default function DataDictionary({ name, resourceId, fields, canEdit, dolf
 
   return (
     <div>
-      <h3>Dictionnaire de données</h3>
+      <h3>{t('dict.title')}</h3>
       <div className="defilable">
         <table className="donnees">
           <thead>
             <tr>
-              <th>Colonne</th><th>Type déclaré</th><th>Libellé</th><th>Description</th>
-              {hasDolfin && <th>Concept DOLFIN</th>}
+              <th>{t('dict.th_column')}</th><th>{t('dict.th_type')}</th><th>{t('dict.th_label')}</th><th>{t('dict.th_description')}</th>
+              {hasDolfin && <th>{t('dict.th_concept')}</th>}
             </tr>
           </thead>
           <tbody>
@@ -94,8 +96,8 @@ export default function DataDictionary({ name, resourceId, fields, canEdit, dolf
                   <>
                     <td>
                       <select value={vals[f.id].type_override} onChange={set(f.id, 'type_override')}
-                              aria-label={`Type de la colonne ${f.id}`}>
-                        {TYPES.map((t) => <option key={t.v} value={t.v}>{t.label}</option>)}
+                              aria-label={t('dict.aria_col_type', { id: f.id })}>
+                        {TYPES.map((ty) => <option key={ty.v} value={ty.v}>{t(ty.k)}</option>)}
                       </select>
                     </td>
                     <td><input value={vals[f.id].label} onChange={set(f.id, 'label')} /></td>
@@ -103,15 +105,15 @@ export default function DataDictionary({ name, resourceId, fields, canEdit, dolf
                   </>
                 ) : (
                   <>
-                    <td className="meta">{typeLabel(f.info?.type_override)}</td>
-                    <td>{f.info?.label || <span className="meta">non renseigné</span>}</td>
-                    <td>{f.info?.notes || <span className="meta">non renseigné</span>}</td>
+                    <td className="meta">{typeLabel(t, f.info?.type_override)}</td>
+                    <td>{f.info?.label || <span className="meta">{t('dict.not_set')}</span>}</td>
+                    <td>{f.info?.notes || <span className="meta">{t('dict.not_set')}</span>}</td>
                   </>
                 )}
                 {hasDolfin && (
                   <td>
                     {dolfinByCol[f.id]
-                      ? <a className="badge" href={modelUrl} title={`Concept du modèle DOLFIN ${dolfinType}`}>{dolfinByCol[f.id]}</a>
+                      ? <a className="badge" href={modelUrl} title={t('dict.concept_title', { type: dolfinType })}>{dolfinByCol[f.id]}</a>
                       : <span className="meta"> </span>}
                   </td>
                 )}
@@ -122,27 +124,26 @@ export default function DataDictionary({ name, resourceId, fields, canEdit, dolf
       </div>
       {(declares || open) && (
         <p className="meta">
-          Le type déclaré est appliqué aux vues et aux APIs générées (les colonnes sont
-          converties, par exemple en entier ou en date, au lieu d'être renvoyées en texte brut).
+          {t('dict.type_note')}
         </p>
       )}
       {hasDolfin && (
         <p className="meta">
-          Les colonnes portant un « Concept DOLFIN » sont associées au modèle pivot{' '}
-          {modelUrl ? <a href={modelUrl}><code>{dolfinType}</code></a> : <code>{dolfinType}</code>} (harmonisation sémantique).
+          {t('dict.dolfin_note_before')}{' '}
+          {modelUrl ? <a href={modelUrl}><code>{dolfinType}</code></a> : <code>{dolfinType}</code>} {t('dict.dolfin_note_after')}
         </p>
       )}
       {canEdit && !open && (
-        <button className="bouton-admin" onClick={() => setOpen(true)}>✏️ Documenter les colonnes</button>
+        <button className="bouton-admin" onClick={() => setOpen(true)}>{t('dict.doc_columns_btn')}</button>
       )}
       {canEdit && open && (
         <p>
-          <button className="bouton-admin" onClick={save}>Enregistrer</button>{' '}
-          <button className="bouton-admin secondaire" onClick={() => setOpen(false)}>Annuler</button>{' '}
+          <button className="bouton-admin" onClick={save}>{t('dict.save')}</button>{' '}
+          <button className="bouton-admin secondaire" onClick={() => setOpen(false)}>{t('dict.cancel')}</button>{' '}
           {canSuggest && (
             <button className="bouton-admin secondaire" onClick={suggestFill}
-              title="Remplir les libellés et notes vides à partir des concepts DOLFIN">
-              ✨ Pré-remplir depuis DOLFIN
+              title={t('dict.prefill_title')}>
+              {t('dict.prefill_btn')}
             </button>
           )}{' '}
           <span className="meta">{msg}</span>

@@ -3,6 +3,7 @@
 // non connectés. Le GPU alimente l'assistant et la génération IA ; il se met en veille
 // après inactivité et démarre en 1 à 2 min. Interroge /api/gpu/status périodiquement.
 import { useState, useEffect } from 'react';
+import { useT } from './I18nProvider';
 
 // Dérive un état d'affichage commun (réutilisé par GpuControl).
 export function etatGpu(s) {
@@ -17,6 +18,7 @@ export function etatGpu(s) {
 }
 
 export default function GpuStatus() {
+  const t = useT();
   const [s, setS] = useState(null);
 
   useEffect(() => {
@@ -35,8 +37,8 @@ export default function GpuStatus() {
   if (!e) return null;
   return (
     <span className={`dtz-gpu-badge dtz-gpu-${e.cle}`}
-          title="État du GPU souverain qui alimente l'assistant et la génération IA (mise en veille après inactivité, démarrage 1 à 2 min).">
-      {e.pastille} {e.texte}
+          title={t('gpu.badgeTitle')}>
+      {e.pastille} {t('gpu.' + e.cle)}
     </span>
   );
 }

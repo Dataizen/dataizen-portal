@@ -7,6 +7,7 @@
 import { useEffect } from 'react';
 import { REGIONS } from '../lib/regions';
 import { DEPARTEMENTS } from '../lib/departements';
+import { useT } from './I18nProvider';
 
 const PALETTE = ['#2f5496', '#c2571a', '#1e7a46', '#8a3ffc', '#b3261e', '#0ea5e9',
   '#b58900', '#7d5fff', '#0aa89e', '#d6336c'];
@@ -20,7 +21,7 @@ function majUrl(key, val) {
   window.location.search = p.toString();
 }
 
-async function monter(div, maplibregl) {
+async function monter(div, maplibregl, t) {
   let counts = {}; try { counts = JSON.parse(div.dataset.counts || '{}'); } catch { counts = {}; }
   const selDept = div.dataset.selDept || '';
   const selRegion = div.dataset.selRegion || '';
@@ -37,13 +38,13 @@ async function monter(div, maplibregl) {
 
   const wrap = document.createElement('div');
   const barre = document.createElement('div'); barre.className = 'facette-carte-controles';
-  const bDep = document.createElement('button'); bDep.type = 'button'; bDep.textContent = 'Départements';
-  const bReg = document.createElement('button'); bReg.type = 'button'; bReg.textContent = 'Régions';
+  const bDep = document.createElement('button'); bDep.type = 'button'; bDep.textContent = t('map.departments');
+  const bReg = document.createElement('button'); bReg.type = 'button'; bReg.textContent = t('map.regions');
   barre.append(bDep, bReg);
   const carte = document.createElement('div'); carte.className = 'facette-carte';
   // pastilles Outre-mer (codes/noms seulement, pas de géométrie sur la carte métropole)
   const domBar = document.createElement('div'); domBar.className = 'facette-dom';
-  domBar.innerHTML = '<span class="meta">Outre-mer :</span> ';
+  domBar.innerHTML = `<span class="meta">${t('map.overseas')}</span> `;
   for (const c of DOM) {
     const b = document.createElement('button'); b.type = 'button'; b.className = 'facette-dom-chip';
     const nb = counts[c] || 0;
@@ -89,11 +90,14 @@ async function monter(div, maplibregl) {
     const pop = new maplibregl.Popup({ closeButton: false, closeOnClick: false, maxWidth: '220px' });
     map.on('mousemove', 'dep-fill', (e) => {
       const p = e.features[0].properties; map.getCanvas().style.cursor = 'pointer';
-      const lib = mode === 'region' ? (REGIONS[p.region]?.nom || 'Région') : p.nom;
+      const lib = mode === 'region' ? (REGIONS[p.region]?.nom || t('map.regionFallback')) : p.nom;
       const nb = mode === 'region'
         ? gj.features.filter((f) => f.properties.region === p.region).reduce((s, f) => s + f.properties.nb, 0)
         : p.nb;
-      pop.setLngLat(e.lngLat).setHTML(`<strong>${lib}</strong>${nb ? ` · ${nb} jeu${nb > 1 ? 'x' : ''}` : ' · aucun jeu'}`).addTo(map);
+      const nbTxt = nb
+        ? ` · ${nb > 1 ? t('map.datasetsPlural', { n: nb }) : t('map.datasetsSingular', { n: nb })}`
+        : ` · ${t('map.noDataset')}`;
+      pop.setLngLat(e.lngLat).setHTML(`<strong>${lib}</strong>${nbTxt}`).addTo(map);
     });
     map.on('mouseleave', 'dep-fill', () => { map.getCanvas().style.cursor = ''; pop.remove(); });
     map.on('click', 'dep-fill', (e) => {
@@ -118,13 +122,14 @@ async function monter(div, maplibregl) {
 }
 
 export default function FacetteCarteTerritoire() {
+  const t = useT();
   useEffect(() => {
     const divs = [...document.querySelectorAll('.dtz-facette-territoire')].filter((d) => !d.dataset.monte);
     if (!divs.length) return;
     (async () => {
       const maplibregl = (await import('maplibre-gl')).default;
       await import('maplibre-gl/dist/maplibre-gl.css');
-      for (const d of divs) { d.dataset.monte = '1'; monter(d, maplibregl).catch(() => { d.style.display = 'none'; }); }
+      for (const d of divs) { d.dataset.monte = '1'; monter(d, maplibregl, t).catch(() => { d.style.display = 'none'; }); }
     })();
   });
   return null;

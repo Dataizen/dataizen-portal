@@ -5,6 +5,7 @@ import { THEMES } from '../lib/metadata';
 import { assetUrl } from '../lib/themes';
 import CatalogueView from '../components/CatalogueView';
 import { getSettings } from '../lib/directus';
+import { t } from '../lib/i18n';
 
 export const dynamic = 'force-dynamic';
 
@@ -80,11 +81,11 @@ async function Recherche({ block }) {
     <section className="bloc" {...edh(block)}>
       {block.title && <h2>{block.title}</h2>}
       <form className="recherche" action="/catalogue" method="get">
-        <input type="search" name="q" placeholder="Rechercher un jeu de données…" />
-        <button type="submit">Rechercher</button>
+        <input type="search" name="q" placeholder={t('home.searchPlaceholder')} />
+        <button type="submit">{t('home.search')}</button>
       </form>
       <p className="meta">
-        <a href="/catalogue">Catalogue complet{count != null ? ` (${count} jeux de données)` : ''} →</a>
+        <a href="/catalogue">{t('home.fullCatalogue')}{count != null ? t('home.datasetsCount', { n: count }) : ''} →</a>
       </p>
     </section>
   );
@@ -153,7 +154,7 @@ async function Actualites({ block }) {
           </a>
         ))}
       </div>
-      <p className="meta"><a href="/actualites">Toutes les actualités →</a></p>
+      <p className="meta"><a href="/actualites">{t('home.allNews')}</a></p>
     </section>
   );
 }
@@ -192,7 +193,7 @@ function SupersetEmbed({ block }) {
   return (
     <section className="bloc" {...edh(block)}>
       {block.title && <h2>{block.title}</h2>}
-      <iframe className="evidence" title={block.title || 'Tableau de bord'}
+      <iframe className="evidence" title={block.title || t('home.dashboard')}
         src={`${bi}/superset/dashboard/${slug}/?standalone=3`} loading="lazy" />
     </section>
   );
@@ -206,7 +207,7 @@ function CarteBloc({ block }) {
     <section className="bloc" {...edh(block)}>
       {block.title && <h2>{block.title}</h2>}
       <div className="dtz-carte" {...(cfg ? { 'data-config': cfg } : { 'data-rid': rid })}
-        role="img" aria-label={block.title || 'Carte'} />
+        role="img" aria-label={block.title || t('home.map')} />
     </section>
   );
 }
@@ -217,7 +218,7 @@ function GraphiqueBloc({ block }) {
   return (
     <section className="bloc" {...edh(block)}>
       {block.title && <h2>{block.title}</h2>}
-      <div className="dtz-graphique" data-config={id} role="img" aria-label={block.title || 'Graphique'} />
+      <div className="dtz-graphique" data-config={id} role="img" aria-label={block.title || t('home.chart')} />
     </section>
   );
 }
@@ -234,7 +235,7 @@ function FlourishBloc({ block }) {
       {block.title && <h2>{block.title}</h2>}
       <div className="embed dtz-flourish">
         <iframe src={src}
-          title={block.title || 'Visualisation Flourish'} loading="lazy" referrerPolicy="no-referrer"
+          title={block.title || t('home.flourishViz')} loading="lazy" referrerPolicy="no-referrer"
           allow="fullscreen" style={{ display: 'block', width: '100%', height: block.config?.hauteur || 560, border: 0 }} />
       </div>
     </section>
@@ -252,7 +253,7 @@ function VideoBloc({ block }) {
       {block.title && <h2>{block.title}</h2>}
       <div className="embed dtz-youtube">
         <iframe src={`https://www.youtube-nocookie.com/embed/${id}`}
-          title={block.title || 'Vidéo YouTube'} loading="lazy" referrerPolicy="no-referrer"
+          title={block.title || t('home.youtubeVideo')} loading="lazy" referrerPolicy="no-referrer"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
           allowFullScreen />
       </div>
@@ -310,8 +311,8 @@ function Inserer({ sort, settingsId }) {
     : {};
   return (
     <button type="button" className="dtz-inserer dtz-edit-only"
-      data-collection="home_blocks" data-sort={sort} {...parent} aria-label="Ajouter un bloc ici">
-      ＋ Ajouter un bloc ici
+      data-collection="home_blocks" data-sort={sort} {...parent} aria-label={t('home.addBlock')}>
+      {t('home.addBlockHere')}
     </button>
   );
 }

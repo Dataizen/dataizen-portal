@@ -4,6 +4,7 @@
 // et mise en page 2 colonnes (texte à gauche ; information clé + visualisation
 // Flourish à droite). Réutilisable pour toute page structurée en sections.
 import { useState } from 'react';
+import { useT } from './I18nProvider';
 
 // texte/info d'une section : chaînes déjà en HTML (paragraphes, listes, gras issus
 // de la source) rendues telles quelles ; repli sur <p> pour les chaînes en texte brut
@@ -12,12 +13,13 @@ const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').
 const asHtml = (arr) => (arr || []).map((s) => (/^\s*</.test(s) ? s : `<p>${esc(s)}</p>`)).join('');
 
 function Viz({ id }) {
+  const t = useT();
   if (!id) return null;
   return (
     <div className="rap-viz">
       <iframe
         src={`https://flo.uri.sh/visualisation/${id}/embed?auto=1`}
-        title="Visualisation" loading="lazy" referrerPolicy="no-referrer" allow="fullscreen"
+        title={t('report.vizTitle')} loading="lazy" referrerPolicy="no-referrer" allow="fullscreen"
         style={{ display: 'block', width: '100%', height: 560, border: 0 }}
       />
     </div>
@@ -25,13 +27,14 @@ function Viz({ id }) {
 }
 
 export default function RapportLayout({ title, intro = [], sections = [], parent }) {
+  const t = useT();
   const [i, setI] = useState(0);
   const n = sections.length;
   const sec = sections[i] || {};
   return (
     <div className="rapport">
-      <nav className="rap-fil" aria-label="Fil d'Ariane">
-        <a href="/">Accueil</a><span aria-hidden="true"> / </span>
+      <nav className="rap-fil" aria-label={t('report.breadcrumbAria')}>
+        <a href="/">{t('report.home')}</a><span aria-hidden="true"> / </span>
         {parent && (<><a href={`/pages/${parent.slug}`}>{parent.title}</a><span aria-hidden="true"> / </span></>)}
         <strong>{title}</strong>
       </nav>
@@ -42,15 +45,15 @@ export default function RapportLayout({ title, intro = [], sections = [], parent
       )}
 
       {n > 1 && (
-        <div className="rap-pager" role="tablist" aria-label="Sections du rapport">
+        <div className="rap-pager" role="tablist" aria-label={t('report.sectionsAria')}>
           <button type="button" className="rap-nav" disabled={i === 0}
-                  onClick={() => setI((v) => Math.max(0, v - 1))}>‹ Précédent</button>
+                  onClick={() => setI((v) => Math.max(0, v - 1))}>{t('report.prev')}</button>
           {sections.map((_, k) => (
             <button type="button" key={k} role="tab" aria-selected={k === i}
                     className={k === i ? 'rap-num actif' : 'rap-num'} onClick={() => setI(k)}>{k + 1}</button>
           ))}
           <button type="button" className="rap-nav" disabled={i === n - 1}
-                  onClick={() => setI((v) => Math.min(n - 1, v + 1))}>Suivant ›</button>
+                  onClick={() => setI((v) => Math.min(n - 1, v + 1))}>{t('report.next')}</button>
         </div>
       )}
 

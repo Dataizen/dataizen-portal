@@ -7,6 +7,7 @@
 // client et envoyés au service RAG qui propose titre, description, mots-clés.
 import { useState, useRef, useEffect } from 'react';
 import ResumableFile from './ResumableFile';
+import { useT } from './I18nProvider';
 
 // Parse rapide (entête + échantillon) d'un CSV/TSV côté client. Détection simple
 // du séparateur et retrait des guillemets ; suffisant pour le contexte IA.
@@ -28,6 +29,7 @@ function parseDelimited(text) {
 }
 
 export default function DepositForm({ admin, organizations, instanceOrg, licenses, fields, depositor }) {
+  const t = useT();
   const [title, setTitle] = useState('');
   const [notes, setNotes] = useState('');
   const [tags, setTags] = useState('');
@@ -50,7 +52,7 @@ export default function DepositForm({ admin, organizations, instanceOrg, license
   async function onFileSelected(blob, name) {
     setParsed(null); setAiMsg('');
     if (!/\.(csv|tsv|txt)$/i.test(name || '')) {
-      setAiMsg('Pré-remplissage IA disponible pour les fichiers CSV.');
+      setAiMsg(t('deposit.msg_ai_csv_only'));
       return;
     }
     try {
@@ -58,14 +60,14 @@ export default function DepositForm({ admin, organizations, instanceOrg, license
       const { columns, sample } = parseDelimited(text);
       if (columns.length) {
         setParsed({ columns, sample, filename: name });
-        setAiMsg(`${columns.length} colonnes détectées : vous pouvez pré-remplir avec l'IA.`);
+        setAiMsg(t('deposit.msg_cols_detected', { n: columns.length }));
       }
     } catch { /* fichier illisible côté client : pré-remplissage indisponible */ }
   }
 
   async function prefill() {
-    if (!parsed) { setAiMsg("Choisissez d'abord un fichier CSV."); return; }
-    setAiBusy(true); setAiMsg("L'IA analyse le fichier (le GPU peut mettre 1 à 2 min à démarrer)…");
+    if (!parsed) { setAiMsg(t('deposit.msg_choose_csv')); return; }
+    setAiBusy(true); setAiMsg(t('deposit.msg_ai_analyzing_file'));
     try {
       const r = await fetch('/api/dataset/prefill', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -76,13 +78,13 @@ export default function DepositForm({ admin, organizations, instanceOrg, license
       });
       const d = await r.json();
       if (d.warming) { setAiMsg(d.message); setAiBusy(false); return; }
-      if (d.error) { setAiMsg('IA : ' + d.error); setAiBusy(false); return; }
+      if (d.error) { setAiMsg(t('deposit.ai_error_prefix') + d.error); setAiBusy(false); return; }
       if (d.title) setTitle(d.title);
       if (d.notes) setNotes(d.notes);
       if (Array.isArray(d.tags) && d.tags.length) setTags(d.tags.join(', '));
       if (d.extras) setVals((v) => ({ ...v, ...d.extras }));
-      setAiMsg('✨ Métadonnées pré-remplies : vérifiez et ajustez avant de déposer.');
-    } catch { setAiMsg('IA indisponible.'); }
+      setAiMsg(t('deposit.msg_prefilled'));
+    } catch { setAiMsg(t('deposit.msg_ai_unavailable')); }
     setAiBusy(false);
   }
 
@@ -90,7 +92,7 @@ export default function DepositForm({ admin, organizations, instanceOrg, license
     e.preventDefault();
     setEnvoi(true);
     const hasFile = fileRef.current?.hasFile();
-    setMsg('création du jeu…');
+    setMsg(t('deposit.msg_creating'));
     const fd = new FormData(e.target); // métadonnées + éventuelle URL (PAS le fichier : il passe par tus)
     let data;
     try {
@@ -98,40 +100,40 @@ export default function DepositForm({ admin, organizations, instanceOrg, license
       data = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(data.error || r.status);
     } catch (err) {
-      setEnvoi(false); setMsg(`erreur : ${err.message}`); return;
+      setEnvoi(false); setMsg(t('deposit.msg_error', { e: err.message })); return;
     }
 
     // Dépôt du fichier en upload résumable (le composant Uppy affiche la progression).
     if (hasFile) {
       try {
-        setMsg('dépôt du fichier en cours… (vous pouvez suivre la progression ci-dessus ; la reprise est automatique)');
-        const t = await fetch('/api/deposit/start', {
+        setMsg(t('deposit.msg_uploading'));
+        const dep = await fetch('/api/deposit/start', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ pkg: data.name }),
         }).then((x) => x.json());
-        if (!t.ticket) throw new Error(t.error || 'dépôt non autorisé');
-        await fileRef.current.upload(t.endpoint, t.ticket);
+        if (!dep.ticket) throw new Error(dep.error || t('deposit.err_unauthorized'));
+        await fileRef.current.upload(dep.endpoint, dep.ticket);
       } catch (err) {
         setEnvoi(false);
-        setMsg(`Jeu créé, mais le dépôt du fichier a échoué (${err.message}). Vous pouvez réessayer depuis la fiche du jeu.`);
+        setMsg(t('deposit.msg_upload_failed', { e: err.message }));
         setTimeout(() => { window.location.href = `/dataset/${data.name}`; }, 4000);
         return;
       }
     }
-    setMsg('✔ Dépôt terminé (brouillon privé ; un administrateur le publiera). Redirection…');
+    setMsg(t('deposit.msg_done'));
     window.location.href = `/dataset/${data.name}`;
   };
 
   return (
     <form className="carte edition" onSubmit={submit}>
-      <label>Titre *</label>
+      <label>{t('deposit.label_title')}</label>
       <input name="title" required minLength={3} maxLength={200} value={title}
         onChange={(e) => setTitle(e.target.value)}
-        placeholder="ex : Équipements sportifs de la commune" />
+        placeholder={t('deposit.title_placeholder')} />
 
-      <label>Description</label>
+      <label>{t('deposit.label_description')}</label>
       <textarea name="notes" rows={4} value={notes} onChange={(e) => setNotes(e.target.value)}
-        placeholder="Que contient cette donnée, comment a-t-elle été produite ?" />
+        placeholder={t('deposit.notes_placeholder')} />
 
       {fields.map((f) => (
         <div key={f.key}>
@@ -149,49 +151,48 @@ export default function DepositForm({ admin, organizations, instanceOrg, license
         </div>
       ))}
 
-      <label>Mots-clés (séparés par des virgules)</label>
+      <label>{t('deposit.label_tags')}</label>
       <input name="tags" value={tags} onChange={(e) => setTags(e.target.value)}
-        placeholder="ex : sport, équipements, jeunesse" />
+        placeholder={t('deposit.tags_placeholder')} />
 
-      <label>Licence</label>
+      <label>{t('deposit.label_license')}</label>
       <select name="license_id" defaultValue="notspecified">
         {licenses.map((l) => <option key={l.id} value={l.id}>{l.title}</option>)}
       </select>
 
       {admin ? (
         <>
-          <label>Organisation</label>
+          <label>{t('deposit.label_org')}</label>
           <select name="organization" defaultValue={instanceOrg}>
             {organizations.map((o) => <option key={o.name} value={o.name}>{o.display_name || o.name}</option>)}
           </select>
-          <label>Visibilité</label>
+          <label>{t('deposit.label_visibility')}</label>
           <select name="visibility" defaultValue="private">
-            <option value="private">Privé (brouillon, visible des admins)</option>
-            <option value="public">Public (visible au catalogue)</option>
+            <option value="private">{t('deposit.vis_private')}</option>
+            <option value="public">{t('deposit.vis_public')}</option>
           </select>
         </>
       ) : (
         <p className="meta">
-          Le jeu de données sera déposé en <strong>privé</strong> dans l'organisation « {instanceOrg} » :
-          un administrateur pourra le publier au catalogue.
+          {t('deposit.private_note_before')} <strong>{t('deposit.private_note_strong')}</strong> {t('deposit.private_note_after', { org: instanceOrg })}
         </p>
       )}
 
-      <label>Fichier de données (CSV, XLSX, GeoJSON… jusqu'à 10 Go, reprise automatique)</label>
+      <label>{t('deposit.label_file')}</label>
       {mounted
         ? <ResumableFile ref={fileRef} onFileSelected={onFileSelected} />
-        : <p className="meta">chargement du dépôt de fichier…</p>}
+        : <p className="meta">{t('deposit.loading_uploader')}</p>}
       <p style={{ margin: '.4rem 0' }}>
         <button type="button" className="bouton-admin secondaire" onClick={prefill} disabled={aiBusy || !parsed}>
-          {aiBusy ? '⏳ L\'IA analyse…' : '✨ Pré-remplir les métadonnées avec l\'IA'}
+          {aiBusy ? t('deposit.ai_analyzing') : t('deposit.ai_prefill')}
         </button>{' '}
         <span className="meta">{aiMsg}</span>
       </p>
-      <p className="meta">ou lien vers une donnée hébergée ailleurs :</p>
+      <p className="meta">{t('deposit.or_url')}</p>
       <input name="resource_url" type="url" placeholder="https://…" />
 
       <p>
-        <button className="bouton-admin" disabled={envoi} type="submit">Déposer</button>{' '}
+        <button className="bouton-admin" disabled={envoi} type="submit">{t('deposit.submit')}</button>{' '}
         <span className="meta">{msg}</span>
       </p>
     </form>

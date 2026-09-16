@@ -2,11 +2,13 @@
 // Contrôle qualité d'un jeu (déterministe + suggestions IA), à la demande du
 // déposant ou d'un admin. Affiche un score, une checklist et des pistes d'amélioration.
 import { useState } from 'react';
+import { useT } from './I18nProvider';
 
 const ICON = { ok: '✔', warn: '⚠', ko: '✖' };
 const COLOR = { ok: '#1a7f37', warn: '#bf8700', ko: '#a3271a' };
 
 export default function QualityPanel({ name }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [rep, setRep] = useState(null);
@@ -20,19 +22,19 @@ export default function QualityPanel({ name }) {
         body: JSON.stringify({ name }),
       });
       const d = await r.json();
-      if (!r.ok) { setMsg(d.error || 'contrôle indisponible'); setBusy(false); return; }
+      if (!r.ok) { setMsg(d.error || t('quality.msg_unavailable')); setBusy(false); return; }
       setRep(d);
-    } catch { setMsg('contrôle indisponible'); }
+    } catch { setMsg(t('quality.msg_unavailable')); }
     setBusy(false);
   }
 
   if (!open) {
-    return <button className="bouton-admin secondaire" onClick={run}>🔎 Contrôle qualité</button>;
+    return <button className="bouton-admin secondaire" onClick={run}>{t('quality.open_button')}</button>;
   }
   return (
     <div className="carte edition">
-      <h3>Contrôle qualité {rep && <span className="badge">score {rep.score}/100</span>}</h3>
-      {busy && <p className="meta">analyse en cours…</p>}
+      <h3>{t('quality.title')} {rep && <span className="badge">{t('quality.score', { n: rep.score })}</span>}</h3>
+      {busy && <p className="meta">{t('quality.analyzing')}</p>}
       {msg && <p className="meta">{msg}</p>}
       {rep && (
         <>
@@ -46,15 +48,15 @@ export default function QualityPanel({ name }) {
           </ul>
           {rep.suggestions?.length > 0 && (
             <>
-              <strong>Pistes d'amélioration :</strong>
+              <strong>{t('quality.suggestions_label')}</strong>
               <ul>{rep.suggestions.map((s, i) => <li key={i}>{s}</li>)}</ul>
             </>
           )}
-          {rep.warming && <p className="meta">Les suggestions IA n'ont pas pu être générées (le GPU démarre) ; réessayez dans une minute.</p>}
+          {rep.warming && <p className="meta">{t('quality.warming')}</p>}
         </>
       )}
-      <p><button className="bouton-admin secondaire" onClick={run} disabled={busy}>Relancer</button>{' '}
-        <button className="bouton-admin secondaire" onClick={() => setOpen(false)}>Fermer</button></p>
+      <p><button className="bouton-admin secondaire" onClick={run} disabled={busy}>{t('quality.rerun')}</button>{' '}
+        <button className="bouton-admin secondaire" onClick={() => setOpen(false)}>{t('quality.close')}</button></p>
     </div>
   );
 }

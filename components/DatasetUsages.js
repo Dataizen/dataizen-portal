@@ -3,21 +3,25 @@
 // (carte, graphique, tableau de bord). Chargé côté client pour ne pas ralentir la fiche
 // (le balayage interroge le Directus de chaque instance via dtz-rag).
 import { useEffect, useState } from 'react';
+import { useT } from './I18nProvider';
 
-const LABEL = { graphique: 'graphique', carte: 'carte', 'tableau-bord': 'tableau de bord' };
-const PLURIEL = { graphique: 'graphiques', carte: 'cartes', 'tableau-bord': 'tableaux de bord' };
+const LABEL_KEYS = { graphique: 'usages.typeGraphique', carte: 'usages.typeCarte', 'tableau-bord': 'usages.typeTableauBord' };
+const PLURIEL_KEYS = { graphique: 'usages.typeGraphiquePlural', carte: 'usages.typeCartePlural', 'tableau-bord': 'usages.typeTableauBordPlural' };
 
 // Résume une liste de véhicules par type : 1 -> « carte « Titre » », plusieurs du même
 // type -> « 3 graphiques », mélange -> « 3 graphiques, 1 carte ».
-function resume(vias) {
+function resume(vias, t) {
   const parType = {};
   for (const v of vias) (parType[v.type] = parType[v.type] || []).push(v.titre);
-  return Object.entries(parType).map(([t, titres]) =>
-    (titres.length === 1 ? `${LABEL[t] || t} « ${titres[0]} »` : `${titres.length} ${PLURIEL[t] || t}`)
+  return Object.entries(parType).map(([typ, titres]) =>
+    (titres.length === 1
+      ? `${LABEL_KEYS[typ] ? t(LABEL_KEYS[typ]) : typ} « ${titres[0]} »`
+      : `${titres.length} ${PLURIEL_KEYS[typ] ? t(PLURIEL_KEYS[typ]) : typ}`)
   ).join(', ');
 }
 
 export default function DatasetUsages({ name }) {
+  const t = useT();
   const [data, setData] = useState(null);
   useEffect(() => {
     let ok = true;
@@ -26,12 +30,11 @@ export default function DatasetUsages({ name }) {
     return () => { ok = false; };
   }, [name]);
 
-  if (!data) return <p className="meta">Recherche des usages…</p>;
+  if (!data) return <p className="meta">{t('usages.searching')}</p>;
   const insts = data.instances || [];
   if (!insts.length) {
     return (
-      <p className="meta">Ce jeu n’est pas encore utilisé dans un portail (aucune carte,
-        graphique ou tableau de bord publié ne s’appuie dessus).</p>
+      <p className="meta">{t('usages.notUsed')}</p>
     );
   }
   return (
@@ -43,13 +46,13 @@ export default function DatasetUsages({ name }) {
             {(it.pages || []).map((p) => (
               <li key={p.slug}>
                 <a href={`${it.portal}/pages/${p.slug}`} target="_blank" rel="noopener">{p.title}</a>
-                {' '}<span className="meta">({resume(p.via)})</span>
+                {' '}<span className="meta">({resume(p.via, t)})</span>
               </li>
             ))}
             {(it.orphelins || []).length > 0 && (
               <li className="meta">
-                Aussi créé mais pas encore posé sur une page publiée&nbsp;:
-                {' '}{resume(it.orphelins)}
+                {t('usages.orphans')}
+                {' '}{resume(it.orphelins, t)}
               </li>
             )}
           </ul>

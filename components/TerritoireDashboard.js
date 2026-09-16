@@ -8,6 +8,7 @@
 // MapLibre + ECharts auto-hébergés, chargés à la demande.
 import { useEffect } from 'react';
 import { setSelection, onIndicateur } from './territoireBus';
+import { useT } from './I18nProvider';
 
 let echartsP = null;
 function loadECharts() {
@@ -104,7 +105,7 @@ function niveauxDe(el) {
             code: el.dataset.code || 'code', nom: el.dataset.nom || 'departement' }];
 }
 
-async function monter(el, maplibregl, echarts) {
+async function monter(el, maplibregl, echarts, t) {
   // tableau de bord configuré (data-tb) ou config historique (data-niveaux)
   const tb = await configTableauBord(el);
   const indic = tb ? tb.indic : INDIC_DEFAUT;
@@ -129,11 +130,11 @@ async function monter(el, maplibregl, echarts) {
   const levelBar = document.createElement('div');
   levelBar.className = 'terr-niveaux';
   levelBar.setAttribute('role', 'group');
-  levelBar.setAttribute('aria-label', 'Niveau territorial');
+  levelBar.setAttribute('aria-label', t('dashboard.levelAria'));
   const metricBar = document.createElement('div');
   metricBar.className = 'terr-metriques';
   metricBar.setAttribute('role', 'group');
-  metricBar.setAttribute('aria-label', 'Indicateur affiché');
+  metricBar.setAttribute('aria-label', t('dashboard.metricAria'));
   const grille = document.createElement('div');
   grille.className = 'terr-grille';
   const divCarte = document.createElement('div');
@@ -252,21 +253,21 @@ async function monter(el, maplibregl, echarts) {
   const titreTerr = () => (S.selection
     ? (S.parCode[S.selection] || {})[S.nomCol] || S.selection : (ensemble || 'Bourgogne-Franche-Comté'));
   const soustitreTerr = () => (S.selection ? `${S.label} · ${S.selection}`
-    : `Ensemble du territoire (${S.rows.length} ${S.label.toLowerCase()})`);
+    : t('dashboard.wholeTerritory', { n: S.rows.length, label: S.label.toLowerCase() }));
 
   // panneau de droite : l'indicateur choisi (big number) + le graphe comparatif
   const rendrePanneau = () => {
     if (!avecPanneau) return; // carte-sélecteur simple : pas de panneau propre
     panneau.innerHTML =
       `<h3>${titreTerr()}</h3><p class="meta">${soustitreTerr()}` +
-      (S.selection ? ' · <button type="button" class="terr-reset">↩ toute la région</button>'
-        : ' · <span class="meta">cliquez un territoire sur la carte</span>') + '</p>' +
+      (S.selection ? ` · <button type="button" class="terr-reset">${t('dashboard.backToRegion')}</button>`
+        : ` · <span class="meta">${t('dashboard.clickHint')}</span>`) + '</p>' +
       `<div class="terr-tuile terr-vedette"><strong>${fmtV(valeurDe(S.metric), S.metric)}</strong>` +
       `<span>${lib(S.metric)}</span></div>` +
       (() => {
         const r = rangSelection();
-        const titre = S.rows.length > 14 ? 'Comparaison (10 premiers)' : 'Comparaison des territoires';
-        return `<h4 class="terr-theme">${titre}${r ? ` · <span class="terr-rang">${r.rang}<sup>e</sup> sur ${r.total}</span>` : ''}</h4>`;
+        const titre = S.rows.length > 14 ? t('dashboard.compareTop10') : t('dashboard.compareAll');
+        return `<h4 class="terr-theme">${titre}${r ? ` · <span class="terr-rang">${r.rang}<sup>${t('dashboard.rankSuffix')}</sup> ${t('dashboard.rankOver', { total: r.total })}</span>` : ''}</h4>`;
       })();
     panneau.appendChild(divChart);
     chart.resize();
@@ -287,7 +288,7 @@ async function monter(el, maplibregl, echarts) {
       `<div class="terr-cat-banniere">${libelleTheme(t)}</div>` +
       `<p class="meta">${titreTerr()} · ${soustitreTerr()}</p>` +
       `<div class="terr-tuiles terr-cat-tuiles">${tuiles
-        || '<span class="meta">Aucun indicateur pour ce thème à ce niveau.</span>'}</div>`;
+        || `<span class="meta">${t('dashboard.noIndicatorTheme')}</span>`}</div>`;
   };
 
   const appliquer = () => {
@@ -311,7 +312,7 @@ async function monter(el, maplibregl, echarts) {
     // visibles) + boutons d'indicateur de la seule catégorie active (gain de place).
     const onglets = document.createElement('div');
     onglets.className = 'terr-cat-onglets'; onglets.setAttribute('role', 'tablist');
-    onglets.setAttribute('aria-label', 'Catégorie d’indicateurs');
+    onglets.setAttribute('aria-label', t('dashboard.categoryAria'));
     const actifs = document.createElement('div');
     actifs.className = 'terr-metrique-actif';
 
@@ -457,6 +458,7 @@ async function monter(el, maplibregl, echarts) {
 }
 
 export default function TerritoireDashboard() {
+  const t = useT();
   useEffect(() => {
     const els = [...document.querySelectorAll('.dtz-territoire')].filter((e) => !e.dataset.init);
     if (!els.length) return;
@@ -466,8 +468,8 @@ export default function TerritoireDashboard() {
       const echarts = await loadECharts();
       for (const el of els) {
         el.dataset.init = '1';
-        try { await monter(el, maplibregl, echarts); }
-        catch { el.innerHTML = '<p class="meta" style="padding:1rem">Tableau de bord indisponible.</p>'; }
+        try { await monter(el, maplibregl, echarts, t); }
+        catch { el.innerHTML = `<p class="meta" style="padding:1rem">${t('dashboard.unavailable')}</p>`; }
       }
     })();
   });

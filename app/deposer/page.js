@@ -2,6 +2,7 @@ import { listOrganizations, listLicenses, listDeposits } from '../../lib/ckan';
 import { getSession, isAdmin } from '../../lib/session';
 import { METADATA_FIELDS } from '../../lib/metadata';
 import DepositForm from '../../components/DepositForm';
+import { t } from '../../lib/i18n';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,8 +11,8 @@ export default async function Deposer() {
   if (!session) {
     return (
       <div>
-        <h1>Déposer un jeu de données</h1>
-        <p><a className="bouton-admin" href="/api/auth/login">Connectez-vous</a> pour déposer une donnée au catalogue.</p>
+        <h1>{t('deposit.title')}</h1>
+        <p><a className="bouton-admin" href="/api/auth/login">{t('deposit.login_cta')}</a> {t('deposit.login_after')}</p>
       </div>
     );
   }
@@ -25,12 +26,10 @@ export default async function Deposer() {
 
   return (
     <div>
-      <h1>Déposer un jeu de données</h1>
+      <h1>{t('deposit.title')}</h1>
       <p className="meta">
-        Le fichier est chargé dans le datastore automatiquement (aperçu, API).
-        Un dépôt est d'abord un <strong>brouillon privé</strong> : il est visible ici et sur sa
-        fiche, {admin ? 'et vous pouvez le publier au catalogue depuis sa fiche (Visibilité).'
-          : 'un administrateur le publiera au catalogue.'} Les métadonnées restent modifiables.
+        {t('deposit.intro_before')} <strong>{t('deposit.intro_draft')}</strong>{t('deposit.intro_after')}{' '}
+        {admin ? t('deposit.intro_admin') : t('deposit.intro_user')} {t('deposit.intro_end')}
       </p>
       <DepositForm
         admin={admin}
@@ -43,16 +42,16 @@ export default async function Deposer() {
 
       {depots.length > 0 && (
         <section className="carte" style={{ marginTop: '1.5rem' }}>
-          <h2>{admin ? 'Dépôts de l’instance' : 'Mes dépôts'}</h2>
+          <h2>{admin ? t('deposit.list_admin') : t('deposit.list_mine')}</h2>
           <ul className="liste-depots">
             {depots.map((d) => (
               <li key={d.name}>
                 <a href={`/dataset/${d.name}`}>{d.title}</a>{' '}
                 <span className={`badge ${d.private ? 'perime' : ''}`}>
-                  {d.private ? 'Brouillon privé' : 'Publié'}
+                  {d.private ? t('deposit.badge_draft') : t('deposit.badge_published')}
                 </span>
-                {admin && d.private && <span className="meta"> · à publier</span>}
-                {admin && d.depose_par && <span className="meta"> · déposé par {d.depose_par}</span>}
+                {admin && d.private && <span className="meta">{t('deposit.to_publish')}</span>}
+                {admin && d.depose_par && <span className="meta">{t('deposit.deposited_by', { n: d.depose_par })}</span>}
               </li>
             ))}
           </ul>

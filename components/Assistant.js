@@ -3,6 +3,7 @@
 // Interroge /api/assistant qui appelle le service dtz-rag (données CKAN publiques
 // + contenu CMS de l'instance) et renvoie une réponse sourcée.
 import { useState, useRef, useEffect } from 'react';
+import { useT } from './I18nProvider';
 
 // Rendu markdown minimal et sûr (échappement HTML d'abord) pour les réponses de
 // l'assistant : gras, italique, code, liens https, listes à puces, titres.
@@ -30,6 +31,7 @@ function renderMd(md) {
 }
 
 export default function Assistant() {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState('');
   const [busy, setBusy] = useState(false);
@@ -48,10 +50,10 @@ export default function Assistant() {
     const path = window.location.pathname;
     const title = document.title || '';
     const md = path.match(/^\/dataset\/([a-z0-9_-]+)/i);
-    if (md) { setCtx({ dataset: md[1], page_title: title, label: <>le jeu <code>{md[1]}</code></> }); return; }
+    if (md) { setCtx({ dataset: md[1], page_title: title, label: <>{t('assistant.labelDataset')} <code>{md[1]}</code></> }); return; }
     if (/^\/(pages|actualites)\//.test(path)) {
       const url = window.location.href.split('#')[0].split('?')[0];
-      setCtx({ focus_url: url, page_title: title, label: <>la page « {title.replace(/\s*[|–-].*$/, '') || 'courante'} »</> });
+      setCtx({ focus_url: url, page_title: title, label: <>{t('assistant.labelPagePrefix')} {title.replace(/\s*[|–-].*$/, '') || t('assistant.labelPageCurrent')} {t('assistant.labelPageSuffix')}</> });
     } else {
       setCtx({ page_title: title });
     }
@@ -79,12 +81,12 @@ export default function Assistant() {
       if (d.warming) {
         setMsgs((m) => [...m, { role: 'ia', text: d.message, warming: true }]);
       } else if (d.error) {
-        setMsgs((m) => [...m, { role: 'ia', text: 'Désolé, une erreur est survenue.' }]);
+        setMsgs((m) => [...m, { role: 'ia', text: t('assistant.errorGeneric') }]);
       } else {
-        setMsgs((m) => [...m, { role: 'ia', text: d.answer || 'Aucune réponse.', sources: d.sources || [] }]);
+        setMsgs((m) => [...m, { role: 'ia', text: d.answer || t('assistant.noAnswer'), sources: d.sources || [] }]);
       }
     } catch {
-      setMsgs((m) => [...m, { role: 'ia', text: 'Assistant indisponible pour le moment.' }]);
+      setMsgs((m) => [...m, { role: 'ia', text: t('assistant.unavailable') }]);
     }
     setBusy(false);
   }
@@ -93,24 +95,22 @@ export default function Assistant() {
   if (!open) {
     return (
       <button className="assistant-fab" onClick={() => setOpen(true)}
-              aria-label="Ouvrir l'assistant de données">💬 Assistant</button>
+              aria-label={t('assistant.openAria')}>💬 {t('assistant.fab')}</button>
     );
   }
 
   return (
-    <div className="assistant-panel" role="dialog" aria-label="Assistant de données">
+    <div className="assistant-panel" role="dialog" aria-label={t('assistant.panelAria')}>
       <div className="assistant-tete">
-        <strong>Assistant de données</strong>
-        <button className="assistant-fermer" onClick={() => setOpen(false)} aria-label="Fermer">✕</button>
+        <strong>{t('assistant.title')}</strong>
+        <button className="assistant-fermer" onClick={() => setOpen(false)} aria-label={t('assistant.close')}>✕</button>
       </div>
       <div className="assistant-corps" ref={boxRef}>
         {msgs.length === 0 && (
           <p className="meta">
             {ctx.label
-              ? <>Vous consultez {ctx.label} : l'assistant le prend comme contexte prioritaire.
-                 Posez votre question, les réponses citent leurs sources.</>
-              : <>Posez une question sur les données du catalogue ou le contenu du site.
-                 Les réponses citent leurs sources. (Données publiques uniquement.)</>}
+              ? <>{t('assistant.contextPrefix')} {ctx.label} {t('assistant.contextSuffix')}</>
+              : <>{t('assistant.emptyDefault')}</>}
           </p>
         )}
         {msgs.map((m, i) => (
@@ -127,12 +127,12 @@ export default function Assistant() {
             )}
           </div>
         ))}
-        {busy && <p className="meta">L'assistant réfléchit…</p>}
+        {busy && <p className="meta">{t('assistant.thinking')}</p>}
       </div>
       <form className="assistant-saisie" onSubmit={ask}>
         <input value={q} onChange={(e) => setQ(e.target.value)} disabled={busy}
-               placeholder="Votre question…" aria-label="Votre question" />
-        <button className="bouton-admin" type="submit" disabled={busy || !q.trim()}>Envoyer</button>
+               placeholder={t('assistant.inputPlaceholder')} aria-label={t('assistant.inputAria')} />
+        <button className="bouton-admin" type="submit" disabled={busy || !q.trim()}>{t('assistant.send')}</button>
       </form>
     </div>
   );

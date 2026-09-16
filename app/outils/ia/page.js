@@ -2,6 +2,7 @@ import { notFound, redirect } from 'next/navigation';
 import { getSession, isAdmin } from '../../../lib/session';
 import GenerationIA from '../../../components/GenerationIA';
 import GpuControl from '../../../components/GpuControl';
+import { t } from '../../../lib/i18n';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,12 +16,9 @@ export default async function OutilsIA() {
   if (!isAdmin(session)) notFound();
   return (
     <div>
-      <h1>Génération assistée par IA</h1>
+      <h1>{t('ia.title')}</h1>
       <p className="meta">
-        Créez un graphique, une carte, un tableau de bord ou une page complète à partir de vos
-        données, en langage naturel. Une <strong>page</strong> générée est créée en brouillon
-        (à vérifier puis publier dans Directus) ; les graphiques et cartes, eux, sont publiés
-        pour être visibles immédiatement, y compris dans l'aperçu.
+        {t('ia.intro_before')} <strong>{t('ia.intro_page')}</strong> {t('ia.intro_after')}
       </p>
       <GpuControl />
       <GenerationIA adminUrl={process.env.NEXT_PUBLIC_ADMIN_URL} />

@@ -4,8 +4,10 @@
 // Réservé aux personnes pouvant éditer le jeu (admin d'instance ou déposant).
 // À l'enregistrement, CKAN régénère une ressource NGSI-LD (interopérabilité MIM2).
 import { useState } from 'react';
+import { useT } from './I18nProvider';
 
 export default function DolfinHarmonizer({ name, admin, harmonized }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [models, setModels] = useState([]);
@@ -28,10 +30,10 @@ export default function DolfinHarmonizer({ name, admin, harmonized }) {
 
   function gpuBadge() {
     if (!gpu) return null;
-    if (!gpu.available) return <span className="meta" title="état GPU indisponible">⚫ IA</span>;
-    if (gpu.ollama_ready) return <span className="meta" style={{ color: '#1a7f37' }}>🟢 GPU prêt</span>;
-    if (gpu.wake_in_progress || gpu.instance_status === 'ACTIVE') return <span className="meta" style={{ color: '#bf8700' }}>🟠 GPU démarre…</span>;
-    return <span className="meta" title="démarrera au 1er appel (1 à 2 min)">⚪ GPU en veille</span>;
+    if (!gpu.available) return <span className="meta" title={t('dolfin.gpu_unavailable_title')}>{t('dolfin.gpu_unavailable')}</span>;
+    if (gpu.ollama_ready) return <span className="meta" style={{ color: '#1a7f37' }}>{t('dolfin.gpu_ready')}</span>;
+    if (gpu.wake_in_progress || gpu.instance_status === 'ACTIVE') return <span className="meta" style={{ color: '#bf8700' }}>{t('dolfin.gpu_starting')}</span>;
+    return <span className="meta" title={t('dolfin.gpu_idle_title')}>{t('dolfin.gpu_idle')}</span>;
   }
 
   async function openPanel() {
@@ -40,7 +42,7 @@ export default function DolfinHarmonizer({ name, admin, harmonized }) {
     try {
       const r = await fetch(`/api/dataset/dolfin/data?name=${encodeURIComponent(name)}`);
       const d = await r.json();
-      if (!r.ok) { setMsg(d.error || 'erreur de chargement'); setLoading(false); return; }
+      if (!r.ok) { setMsg(d.error || t('dolfin.msg_load_error')); setLoading(false); return; }
       setModels(d.models || []); setCols(d.columns || []);
       if (d.current_mapping) {
         try {
@@ -53,7 +55,7 @@ export default function DolfinHarmonizer({ name, admin, harmonized }) {
           });
         } catch { /* mapping courant illisible : on repart de zéro */ }
       }
-    } catch { setMsg('erreur réseau'); }
+    } catch { setMsg(t('dolfin.msg_network_error')); }
     setLoading(false);
   }
 
@@ -72,18 +74,18 @@ export default function DolfinHarmonizer({ name, admin, harmonized }) {
   }
 
   async function propose() {
-    setAiBusy(true); setMsg('L\'IA analyse les colonnes (le GPU peut mettre 1 à 2 min à démarrer)…');
+    setAiBusy(true); setMsg(t('dolfin.msg_ai_analyzing_cols'));
     try {
       const r = await fetch(`/api/dataset/dolfin/propose?name=${encodeURIComponent(name)}&model=${mi}`);
       const d = await r.json();
-      if (d.warming) { setMsg(d.message || 'L\'IA démarre, réessaie dans une minute.'); setAiBusy(false); return; }
-      if (d.error) { setMsg('IA : ' + d.error); setAiBusy(false); return; }
+      if (d.warming) { setMsg(d.message || t('dolfin.msg_ai_warming')); setAiBusy(false); return; }
+      if (d.error) { setMsg(t('dolfin.ai_error_prefix') + d.error); setAiBusy(false); return; }
       const mp = d.mapping || {};
       setMap({ id: mp.id_field || '', fields: mp.fields || {},
                lon: mp.location?.lon || '', lat: mp.location?.lat || '' });
       const n = Object.keys(mp.fields || {}).length;
-      setMsg(`Proposition IA appliquée (${n} champ(s) mappé(s)). Vérifie, ajuste, puis enregistre.`);
-    } catch { setMsg('IA indisponible.'); }
+      setMsg(t('dolfin.msg_ai_applied', { n }));
+    } catch { setMsg(t('dolfin.msg_ai_unavailable')); }
     setAiBusy(false);
     refreshGpu();
   }
@@ -91,18 +93,18 @@ export default function DolfinHarmonizer({ name, admin, harmonized }) {
   // Génère un brouillon de modèle canonique .dolfin par l'IA à partir de CE jeu.
   async function generateModel() {
     setGenBusy(true); setDraft(null);
-    setGenMsg('L\'IA rédige un modèle à partir de ce jeu (le GPU peut mettre 1 à 2 min à démarrer)…');
+    setGenMsg(t('dolfin.msg_gen_writing'));
     try {
       const r = await fetch('/api/dataset/dolfin/generate', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name }),
       });
       const d = await r.json();
-      if (d.warming) { setGenMsg(d.message || 'L\'IA démarre, réessaie dans une minute.'); setGenBusy(false); return; }
-      if (!r.ok || d.error) { setGenMsg('IA : ' + (d.error || 'indisponible')); setGenBusy(false); return; }
+      if (d.warming) { setGenMsg(d.message || t('dolfin.msg_ai_warming')); setGenBusy(false); return; }
+      if (!r.ok || d.error) { setGenMsg(t('dolfin.ai_error_prefix') + (d.error || t('dolfin.unavailable'))); setGenBusy(false); return; }
       setDraft({ dolfin: d.dolfin || '', type: d.type_suggestion || '', titre: d.title || name });
-      setGenMsg('Brouillon généré. Relis, ajuste le type et le titre, puis enregistre le modèle.');
-    } catch { setGenMsg('IA indisponible.'); }
+      setGenMsg(t('dolfin.msg_gen_done'));
+    } catch { setGenMsg(t('dolfin.msg_ai_unavailable')); }
     setGenBusy(false);
     refreshGpu();
   }
@@ -111,17 +113,17 @@ export default function DolfinHarmonizer({ name, admin, harmonized }) {
   // le versionne, et le modèle devient sélectionnable pour harmoniser ce jeu.
   async function saveModel() {
     if (!draft) return;
-    if (!draft.type.trim() || !draft.titre.trim()) { setGenMsg('Renseigne un type et un titre.'); return; }
-    setSaving(true); setGenMsg('enregistrement + compilation du .dolfin…');
+    if (!draft.type.trim() || !draft.titre.trim()) { setGenMsg(t('dolfin.msg_need_type_title')); return; }
+    setSaving(true); setGenMsg(t('dolfin.msg_saving_dolfin'));
     try {
       const r = await fetch('/api/dolfin/models', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: draft.type.trim(), titre: draft.titre.trim(), dolfin: draft.dolfin, desc: '' }),
       });
       const d = await r.json().catch(() => ({}));
-      if (!r.ok) { setGenMsg('Enregistrement refusé : ' + (d.error || 'vérifie la syntaxe .dolfin')); setSaving(false); return; }
+      if (!r.ok) { setGenMsg(t('dolfin.msg_save_refused') + (d.error || t('dolfin.check_syntax'))); setSaving(false); return; }
       const savedType = draft.type.trim();
-      setGenMsg('✔ Modèle enregistré et compilé' + (d.message ? ' — ' + d.message : '') + '. Sélectionne-le ci-dessus pour harmoniser ce jeu.');
+      setGenMsg(t('dolfin.msg_model_saved') + (d.message ? ' — ' + d.message : '') + t('dolfin.msg_model_saved_suffix'));
       setDraft(null);
       // recharger la liste des modèles et sélectionner le nouveau
       const rr = await fetch(`/api/dataset/dolfin/data?name=${encodeURIComponent(name)}`);
@@ -131,70 +133,68 @@ export default function DolfinHarmonizer({ name, admin, harmonized }) {
         const idx = (dd.models || []).findIndex((m) => m.type === savedType);
         if (idx >= 0) { setMi(idx); setMap({ id: '', fields: {}, lon: '', lat: '' }); }
       }
-    } catch { setGenMsg('erreur réseau'); }
+    } catch { setGenMsg(t('dolfin.msg_network_error')); }
     setSaving(false);
   }
 
   async function save() {
-    setMsg('enregistrement…');
+    setMsg(t('dolfin.msg_saving'));
     const r = await fetch('/api/dataset/dolfin/save', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, mapping: build() }),
     });
     if (r.ok) {
-      setMsg('✔ Enregistré. Harmonisation lancée : les 3 ressources (NGSI-LD, CSV, GeoJSON) '
-        + 'apparaissent dans la liste des ressources du jeu d’ici une minute.');
+      setMsg(t('dolfin.msg_harmonized'));
       setTimeout(() => window.location.reload(), 2500);
     }
-    else { const d = await r.json().catch(() => ({})); setMsg(d.error || 'erreur d\'enregistrement'); }
+    else { const d = await r.json().catch(() => ({})); setMsg(d.error || t('dolfin.msg_save_error')); }
   }
 
   const opt = (val, onChange, key) => (
     <select value={val} onChange={onChange} aria-label={key}>
-      <option value="">— colonne —</option>
+      <option value="">{t('dolfin.opt_column')}</option>
       {cols.map((c) => <option key={c} value={c}>{c}</option>)}
     </select>
   );
 
   if (!open) {
-    return <button className="bouton-admin" onClick={openPanel}>🧩 {harmonized ? "Modifier l'harmonisation (DOLFIN)" : 'Harmoniser (DOLFIN)'}</button>;
+    return <button className="bouton-admin" onClick={openPanel}>🧩 {harmonized ? t('dolfin.btn_edit_harmo') : t('dolfin.btn_harmo')}</button>;
   }
 
   return (
     <div className="carte edition">
-      <h3>Harmonisation DOLFIN</h3>
-      {loading ? <p className="meta">chargement…</p> : (!cols.length ? (
-        <p className="meta">Aucune ressource CSV chargée dans le datastore pour ce jeu. Dépose un
-          CSV et attends son chargement, puis reviens ici.</p>
+      <h3>{t('dolfin.harmo_title')}</h3>
+      {loading ? <p className="meta">{t('dolfin.loading')}</p> : (!cols.length ? (
+        <p className="meta">{t('dolfin.no_csv')}</p>
       ) : (
         <>
-          <p className="meta">{"Associe les champs du modèle aux colonnes du jeu, ou laisse l'IA proposer."}</p>
-          <p className="meta">{"À l'enregistrement, 3 ressources harmonisées sont (re)générées et ajoutées au jeu, alignées sur le modèle pivot (Smart Data Models) : "}
-            <strong>NGSI-LD</strong>{" (interopérabilité MIM2), "}<strong>{"CSV harmonisé"}</strong>{" et "}<strong>GeoJSON</strong>{". Elles apparaissent dans la liste des ressources du jeu (elles ne remplacent pas la donnée d'origine)."}</p>
-          {admin && <p className="meta" style={{ margin: '0 0 .4rem' }}><a href="/dolfin/models">🧩 Gérer les modèles DOLFIN</a></p>}
+          <p className="meta">{t('dolfin.intro_map')}</p>
+          <p className="meta">{t('dolfin.harmo_desc_1')}
+            <strong>NGSI-LD</strong>{t('dolfin.harmo_desc_2')}<strong>{t('dolfin.harmo_csv')}</strong>{t('dolfin.harmo_and')}<strong>GeoJSON</strong>{t('dolfin.harmo_desc_4')}</p>
+          {admin && <p className="meta" style={{ margin: '0 0 .4rem' }}><a href="/dolfin/models">{t('dolfin.manage_models')}</a></p>}
 
           {admin && (
             <div style={{ margin: '0 0 .8rem' }}>
               <button className="bouton-admin secondaire" onClick={generateModel} disabled={genBusy}>
-                {genBusy ? '⏳ L\'IA rédige…' : '✨ Générer un modèle DOLFIN (IA) depuis ce jeu'}
+                {genBusy ? t('dolfin.gen_writing_btn') : t('dolfin.gen_model_btn')}
               </button>{' '}
               {gpuBadge()}
               {(genMsg && !draft) && <span className="meta" style={{ marginLeft: '.5rem' }}>{genMsg}</span>}
               {draft && (
                 <div className="carte" style={{ marginTop: '.6rem' }}>
-                  <p className="meta">{'Brouillon de modèle canonique '}<code>.dolfin</code>{' généré par l\'IA à partir des colonnes et d\'un échantillon de ce jeu. Base éditable : relis et ajuste. À l\'enregistrement, le '}<code>.dolfin</code>{' est compilé et versionné, et le modèle devient sélectionnable ci-dessus pour harmoniser ce jeu.'}</p>
-                  <label>{'Type (identifiant du modèle) '}
+                  <p className="meta">{t('dolfin.draft_desc_1')}<code>.dolfin</code>{t('dolfin.draft_desc_2')}<code>.dolfin</code>{t('dolfin.draft_desc_3')}</p>
+                  <label>{t('dolfin.draft_label_type')}
                     <input value={draft.type} onChange={(e) => setDraft({ ...draft, type: e.target.value })} placeholder="PointOfInterest" />
                   </label>
-                  <label>{'Titre '}
-                    <input value={draft.titre} onChange={(e) => setDraft({ ...draft, titre: e.target.value })} placeholder="Points d'intérêt" />
+                  <label>{t('dolfin.draft_label_titre')}
+                    <input value={draft.titre} onChange={(e) => setDraft({ ...draft, titre: e.target.value })} placeholder={t('dolfin.draft_titre_ph')} />
                   </label>
                   <textarea value={draft.dolfin} spellCheck={false} rows={18}
                     onChange={(e) => setDraft({ ...draft, dolfin: e.target.value })}
                     style={{ width: '100%', fontFamily: 'ui-monospace, Menlo, Consolas, monospace', fontSize: '.85rem', lineHeight: 1.45, whiteSpace: 'pre', overflow: 'auto' }} />
                   <p>
-                    <button className="bouton-admin" onClick={saveModel} disabled={saving}>Enregistrer le modèle</button>{' '}
-                    <button className="bouton-admin secondaire" onClick={() => { setDraft(null); setGenMsg(''); }}>Annuler</button>{' '}
+                    <button className="bouton-admin" onClick={saveModel} disabled={saving}>{t('dolfin.save_model_btn')}</button>{' '}
+                    <button className="bouton-admin secondaire" onClick={() => { setDraft(null); setGenMsg(''); }}>{t('dolfin.cancel')}</button>{' '}
                     <span className="meta">{genMsg}</span>
                   </p>
                 </div>
@@ -202,7 +202,7 @@ export default function DolfinHarmonizer({ name, admin, harmonized }) {
             </div>
           )}
 
-          <label>Modèle DOLFIN
+          <label>{t('dolfin.model_select_label')}
             <select value={mi} onChange={changeModel}>
               {models.map((m, i) => <option key={m.type} value={i}>{m.titre}</option>)}
             </select>
@@ -211,29 +211,29 @@ export default function DolfinHarmonizer({ name, admin, harmonized }) {
 
           <p>
             <button className="bouton-admin secondaire" onClick={propose} disabled={aiBusy}>
-              {aiBusy ? '⏳ L\'IA réfléchit…' : '✨ Proposer le mapping (IA)'}
+              {aiBusy ? t('dolfin.ai_thinking_btn') : t('dolfin.propose_btn')}
             </button>{' '}
             {gpuBadge()}
           </p>
 
           {model && (
             <div className="dolfin-mapper">
-              <label>Identifiant {opt(map.id, setKey('id'), 'Identifiant')}</label>
+              <label>{t('dolfin.field_id')} {opt(map.id, setKey('id'), t('dolfin.field_id'))}</label>
               {(model.champs || []).map((f) => (
                 <label key={f}>{f} {opt(map.fields[f] || '', setField(f), f)}</label>
               ))}
               {model.geo && (
                 <>
-                  <label>Longitude {opt(map.lon, setKey('lon'), 'Longitude')}</label>
-                  <label>Latitude {opt(map.lat, setKey('lat'), 'Latitude')}</label>
+                  <label>{t('dolfin.field_lon')} {opt(map.lon, setKey('lon'), t('dolfin.field_lon'))}</label>
+                  <label>{t('dolfin.field_lat')} {opt(map.lat, setKey('lat'), t('dolfin.field_lat'))}</label>
                 </>
               )}
             </div>
           )}
 
           <p>
-            <button className="bouton-admin" onClick={save}>Enregistrer + harmoniser</button>{' '}
-            <button className="bouton-admin secondaire" onClick={() => setOpen(false)}>Fermer</button>{' '}
+            <button className="bouton-admin" onClick={save}>{t('dolfin.save_harmo_btn')}</button>{' '}
+            <button className="bouton-admin secondaire" onClick={() => setOpen(false)}>{t('dolfin.close')}</button>{' '}
             <span className="meta">{msg}</span>
           </p>
         </>

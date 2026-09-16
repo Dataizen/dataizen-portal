@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { t } from '../../../../lib/i18n';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,25 +36,24 @@ export default async function ModeleDolfin({ params }) {
   if (!m) notFound();
   return (
     <div>
-      <p className="meta"><a href="/catalogue">← Catalogue</a></p>
-      <h1>{m.titre} <span className="badge">{m.builtin ? 'intégré' : 'personnalisé'}</span></h1>
+      <p className="meta"><a href="/catalogue">{t('dolfin.back_catalog')}</a></p>
+      <h1>{m.titre} <span className="badge">{m.builtin ? t('dolfin.builtin') : t('dolfin.custom')}</span></h1>
       <p className="meta">
-        Modèle pivot des Smart Data Models, cible de l'harmonisation sémantique DOLFIN.
-        Type : <code>{m.type}</code>{m.geo ? ' · géolocalisé (location)' : ''}
+        {t('dolfin.model_intro')}{' '}
+        {t('dolfin.type_label')} <code>{m.type}</code>{m.geo ? t('dolfin.geo_located') : ''}
       </p>
       {m.desc && <p>{m.desc}</p>}
-      <h2>Concepts du modèle</h2>
+      <h2>{t('dolfin.concepts_title')}</h2>
       {m.champs.length > 0 || m.geo ? (
         <ul>
           {m.champs.map((c) => <li key={c}><code>{c}</code></li>)}
-          {m.geo && <li><code>location</code> <span className="meta">(longitude, latitude)</span></li>}
+          {m.geo && <li><code>location</code> <span className="meta">{t('dolfin.lon_lat')}</span></li>}
         </ul>
       ) : (
-        <p className="meta">Aucun concept déclaré.</p>
+        <p className="meta">{t('dolfin.no_concept')}</p>
       )}
       <p className="meta">
-        Un jeu est harmonisé vers ce modèle en associant chacun de ses concepts à une colonne du jeu
-        (voir le panneau « Schéma DOLFIN » sur la fiche du jeu).
+        {t('dolfin.model_footer')}
       </p>
     </div>
   );

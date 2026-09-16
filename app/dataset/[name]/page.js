@@ -20,6 +20,7 @@ import TerritoryLink from '../../../components/TerritoryLink';
 import DatasetUsages from '../../../components/DatasetUsages';
 import DeleteDataset from '../../../components/DeleteDataset';
 import GeoReprocess from '../../../components/GeoReprocess';
+import { t } from '../../../lib/i18n';
 
 export const dynamic = 'force-dynamic';
 
@@ -133,11 +134,11 @@ export default async function FicheDataset({ params }) {
     const perime = vFin && vFin < aujourdhui;
     const pasEncore = vDebut && vDebut > aujourdhui;
     const etat = perime ? 'perime' : pasEncore ? 'attente' : 'valide';
-    const libelle = perime ? `Données périmées depuis le ${fmtJMA(vFin)}`
-      : pasEncore ? `Valides à partir du ${fmtJMA(vDebut)}`
-      : vFin ? `Valides jusqu'au ${fmtJMA(vFin)}`
-      : `Valides depuis le ${fmtJMA(vDebut)}`;
-    const detail = (vDebut && vFin) ? ` · période de validité : ${fmtJMA(vDebut)} au ${fmtJMA(vFin)}` : '';
+    const libelle = perime ? t('dataset.validityExpiredSince', { date: fmtJMA(vFin) })
+      : pasEncore ? t('dataset.validityFrom', { date: fmtJMA(vDebut) })
+      : vFin ? t('dataset.validityUntil', { date: fmtJMA(vFin) })
+      : t('dataset.validitySince', { date: fmtJMA(vDebut) });
+    const detail = (vDebut && vFin) ? t('dataset.validityPeriod', { debut: fmtJMA(vDebut), fin: fmtJMA(vFin) }) : '';
     validite = <p className={`validite ${etat}`}>{perime ? '⚠ ' : ''}{libelle}{detail}</p>;
   }
 
@@ -147,20 +148,20 @@ export default async function FicheDataset({ params }) {
 
   return (
     <div>
-      <p className="meta"><a href="/catalogue">← Catalogue</a></p>
+      <p className="meta"><a href="/catalogue">{t('dataset.backToCatalogue')}</a></p>
       <h1>{d.title || d.name}</h1>
       {validite}
       {dolfinType && (
         <p className="validite valide">
-          🧩 Jeu harmonisé (DOLFIN / Smart Data Models{dolfinType ? <> · <code>{dolfinType}</code></> : ''})
-          {harmonises.length ? ` · ressources normalisées : ${harmonises.join(', ')}` : ''}.
-          {' '}<a href={`/dolfin/modele/${encodeURIComponent(dolfinType)}`}>Voir le modèle</a>
+          {t('dataset.harmonizedBadge')}{dolfinType ? <> · <code>{dolfinType}</code></> : ''})
+          {harmonises.length ? t('dataset.normalizedResources', { list: harmonises.join(', ') }) : ''}.
+          {' '}<a href={`/dolfin/modele/${encodeURIComponent(dolfinType)}`}>{t('dataset.viewModel')}</a>
         </p>
       )}
       {canEdit && dolfinStale && (
         <p className="validite perime">
-          ⚠ Le modèle DOLFIN{dolfinType ? <> <code>{dolfinType}</code></> : ''} a été mis à jour
-          {dolfinChangedBy ? ` par ${dolfinChangedBy}` : ''}. Les fichiers harmonisés peuvent être régénérés.
+          {t('dataset.dolfinModelPrefix')}{dolfinType ? <> <code>{dolfinType}</code></> : ''}{t('dataset.dolfinModelUpdated')}
+          {dolfinChangedBy ? t('dataset.byWho', { who: dolfinChangedBy }) : ''}{t('dataset.dolfinFilesRegenerable')}
           {' '}<RegenerateHarmonisation name={d.name} />
         </p>
       )}
@@ -192,28 +193,28 @@ export default async function FicheDataset({ params }) {
 
       <div className="carte">
         <dl className="fiche">
-          <dt>Organisation</dt><dd>{d.organization?.title || '-'}</dd>
-          <dt>Licence</dt><dd>{d.license_title || '-'}</dd>
-          <dt>Dernière modification</dt><dd>{(d.metadata_modified || '').slice(0, 10)}</dd>
-          <dt>Visibilité</dt><dd>{d.private ? 'Privé (brouillon)' : 'Public'}</dd>
+          <dt>{t('dataset.organization')}</dt><dd>{d.organization?.title || '-'}</dd>
+          <dt>{t('dataset.license')}</dt><dd>{d.license_title || '-'}</dd>
+          <dt>{t('dataset.lastModified')}</dt><dd>{(d.metadata_modified || '').slice(0, 10)}</dd>
+          <dt>{t('dataset.visibility')}</dt><dd>{d.private ? t('dataset.private') : t('dataset.public')}</dd>
           {extras.valide === 'oui' && (
-            <><dt>Validation</dt><dd>
-              <span className="badge">✔ validé</span>
-              {extras.valide_par && <span className="meta"> par {extras.valide_par}</span>}
-              {extras.valide_le && <span className="meta"> le {extras.valide_le}</span>}
+            <><dt>{t('dataset.validation')}</dt><dd>
+              <span className="badge">{t('dataset.validated')}</span>
+              {extras.valide_par && <span className="meta">{t('dataset.byWho', { who: extras.valide_par })}</span>}
+              {extras.valide_le && <span className="meta">{t('dataset.onDate', { date: extras.valide_le })}</span>}
             </dd></>
           )}
           {dolfinType && (
-            <><dt>Modèle DOLFIN</dt><dd>
+            <><dt>{t('dataset.dolfinModel')}</dt><dd>
               <code>{dolfinType}</code>{' '}
-              <span className="badge">harmonisé</span>
+              <span className="badge">{t('dataset.harmonized')}</span>
               {(d.resources || []).filter((r) => r.harmonized_from).length > 0 && (
-                <span className="meta"> · {(d.resources || []).filter((r) => r.harmonized_from).length} sortie(s) (NGSI-LD / CSV / GeoJSON) ci-dessous</span>
+                <span className="meta">{t('dataset.dolfinOutputs', { n: (d.resources || []).filter((r) => r.harmonized_from).length })}</span>
               )}
             </dd></>
           )}
           {tailleDataset(d.resources) && (
-            <><dt>Taille des données</dt><dd>{formatTaille(tailleDataset(d.resources))}</dd></>
+            <><dt>{t('dataset.dataSize')}</dt><dd>{formatTaille(tailleDataset(d.resources))}</dd></>
           )}
           {METADATA_FIELDS.filter((f) => extras[f.key] && !f.key.startsWith('validite_')).map((f) => (
             <div key={f.key} style={{ display: 'contents' }}>
@@ -221,25 +222,24 @@ export default async function FicheDataset({ params }) {
             </div>
           ))}
           {extras.depose_par && (
-            <><dt>Déposé par</dt><dd>{extras.depose_par}</dd></>
+            <><dt>{t('dataset.depositedBy')}</dt><dd>{extras.depose_par}</dd></>
           )}
           {d.tags?.length > 0 && (
-            <><dt>Mots-clés</dt><dd>{d.tags.map((t) => <span className="badge" key={t.name}>{t.display_name}</span>)}</dd></>
+            <><dt>{t('dataset.keywords')}</dt><dd>{d.tags.map((tag) => <span className="badge" key={tag.name}>{tag.display_name}</span>)}</dd></>
           )}
         </dl>
       </div>
 
       {dolfin && (dolfin.rows.length > 0 || dolfin.geo) && (
         <div className="carte dolfin-schema">
-          <h2>Schéma DOLFIN</h2>
+          <h2>{t('dataset.dolfinSchema')}</h2>
           <p className="meta">
-            Ce jeu est harmonisé vers le modèle pivot <code>{dolfin.type}</code> des Smart Data Models :
-            correspondance des concepts vers les colonnes du jeu.
-            {' '}<a href={`/dolfin/modele/${encodeURIComponent(dolfin.type)}`}>Voir le modèle →</a>
+            {t('dataset.harmonizedTowardPivot')}<code>{dolfin.type}</code>{t('dataset.smartDataModelsMapping')}
+            {' '}<a href={`/dolfin/modele/${encodeURIComponent(dolfin.type)}`}>{t('dataset.viewModelArrow')}</a>
           </p>
           <div className="defilable">
             <table className="donnees">
-              <thead><tr><th>Concept DOLFIN</th><th>Colonne source</th></tr></thead>
+              <thead><tr><th>{t('dataset.dolfinConcept')}</th><th>{t('dataset.sourceColumn')}</th></tr></thead>
               <tbody>
                 {dolfin.rows.map(([concept, col]) => (
                   <tr key={concept}><td><code>{concept}</code></td><td><a href={`#col-${col}`}>{col}</a></td></tr>
@@ -247,29 +247,29 @@ export default async function FicheDataset({ params }) {
                 {dolfin.geo && (
                   <tr><td><code>location</code></td><td>
                     <a href={`#col-${dolfin.geo.lon}`}>{dolfin.geo.lon}</a>, <a href={`#col-${dolfin.geo.lat}`}>{dolfin.geo.lat}</a>
-                    {' '}<span className="meta">(longitude, latitude)</span>
+                    {' '}<span className="meta">{t('dataset.longitudeLatitude')}</span>
                   </td></tr>
                 )}
               </tbody>
             </table>
           </div>
-          {dolfin.idField && <p className="meta">Identifiant : <code>{dolfin.idField}</code></p>}
+          {dolfin.idField && <p className="meta">{t('dataset.identifier')}<code>{dolfin.idField}</code></p>}
           {dolfin.context && (
-            <p className="meta">Contexte : <a href={dolfin.context} rel="nofollow noopener" target="_blank">{dolfin.context}</a></p>
+            <p className="meta">{t('dataset.context')}<a href={dolfin.context} rel="nofollow noopener" target="_blank">{dolfin.context}</a></p>
           )}
         </div>
       )}
 
-      <h2>Ressources</h2>
+      <h2>{t('dataset.resources')}</h2>
       {(d.resources || []).map((r) => (
         <div className="carte" key={r.id}>
           <h3>{r.name || r.url?.split('/').pop()}</h3>
           <p className="meta">
             <span className="badge">{r.format || '?'}</span>
             {formatTaille(r.size) ? ` ${formatTaille(r.size)} · ` : ' '}
-            <a href={r.url}>Télécharger</a>
+            <a href={r.url}>{t('dataset.download')}</a>
             {r.datastore_active && (
-              <> · <a href={`${CKAN_PUBLIC}/api/3/action/datastore_search?resource_id=${r.id}&limit=100`}>API datastore</a></>
+              <> · <a href={`${CKAN_PUBLIC}/api/3/action/datastore_search?resource_id=${r.id}&limit=100`}>{t('dataset.datastoreApi')}</a></>
             )}
           </p>
           {r.url_type === 'upload' && (!r.datastore_active || ['detecting', 'geometrizing', 'error'].includes(r.dtz_geo_status)) && (
@@ -284,20 +284,20 @@ export default async function FicheDataset({ params }) {
         </div>
       ))}
       {canEdit && (
-        <p><UpdateResource dataset={d.name} label="➕ Ajouter un fichier de données" /></p>
+        <p><UpdateResource dataset={d.name} label={t('dataset.addDataFile')} /></p>
       )}
       {gristUrl && !session && (
         <p className="meta">
-          <a href="/api/auth/login">Connectez-vous</a> pour copier ces données dans l'espace de travail (Grist).
+          <a href="/api/auth/login">{t('dataset.login')}</a>{t('dataset.loginToCopy')}
         </p>
       )}
 
       {carteAffichable && (
         <div>
-          <h3>Carte</h3>
+          <h3>{t('dataset.map')}</h3>
           <div className="dtz-carte" data-fiche={d.name} role="img"
-               aria-label="Carte du jeu de données, sources sélectionnables" />
-          <p className="meta">Sources sélectionnables (boutons en haut à gauche) : carte GeoJSON, points des données, services WMS et WFS.</p>
+               aria-label={t('dataset.mapAriaLabel')} />
+          <p className="meta">{t('dataset.mapSources')}</p>
         </div>
       )}
 
@@ -307,10 +307,10 @@ export default async function FicheDataset({ params }) {
       {!carteAffichable && (geoDet.geomCol || geoDet.pointCol) && (
         <div>
           <p className="meta" style={{ color: '#0f766e' }}>
-            🗺️ Ce jeu contient des données géographiques
-            {geoDet.geomCol ? <> : colonne «&nbsp;{geoDet.geomCol}&nbsp;» (géométries WKT/GeoJSON)</> : null}
-            {geoDet.pointCol ? <>{geoDet.geomCol ? ' et ' : ' : '}colonne «&nbsp;{geoDet.pointCol}&nbsp;» (points «&nbsp;lat, lon&nbsp;»)</> : null}.
-            {' '}La carte est servie côté serveur (rendu de l'emprise visible) après préparation des géométries.
+            {t('dataset.geoDataContains')}
+            {geoDet.geomCol ? <>{t('dataset.geoColGeom', { col: geoDet.geomCol })}</> : null}
+            {geoDet.pointCol ? <>{geoDet.geomCol ? t('dataset.geoAnd') : t('dataset.geoColon')}{t('dataset.geoColPoint', { col: geoDet.pointCol })}</> : null}.
+            {' '}{t('dataset.geoServerRendered')}
           </p>
           {canEdit && <p><GeoReprocess name={d.name} /></p>}
         </div>
@@ -332,7 +332,7 @@ export default async function FicheDataset({ params }) {
 
       {canEdit && resDatastore && (
         <div className="carte" style={{ margin: '.6rem 0' }}>
-          <h3 style={{ marginTop: 0 }}>Mettre à jour les données</h3>
+          <h3 style={{ marginTop: 0 }}>{t('dataset.updateData')}</h3>
           <UpdateResource dataset={d.name} resourceId={resDatastore.id} explain />
         </div>
       )}
@@ -345,7 +345,7 @@ export default async function FicheDataset({ params }) {
 
       {reuses.length > 0 && (
         <div>
-          <h2>Réutilisations</h2>
+          <h2>{t('dataset.reuses')}</h2>
           {reuses.map((r) => (
             <div className="carte" key={r.id}>
               <h3>{r.url ? <a href={r.url}>{r.title}</a> : r.title}</h3>
@@ -355,38 +355,37 @@ export default async function FicheDataset({ params }) {
         </div>
       )}
 
-      <h2>Utilisée dans les portails</h2>
-      <p className="meta">Instances Dataizen où ce jeu alimente une carte, un graphique ou un
-        tableau de bord publié.</p>
+      <h2>{t('dataset.usedInPortals')}</h2>
+      <p className="meta">{t('dataset.usedInPortalsDesc')}</p>
       <DatasetUsages name={d.name} />
 
-      <h2>API</h2>
+      <h2>{t('dataset.api')}</h2>
       <p className="meta">
-        Fiche : <a href={`${CKAN_PUBLIC}/api/3/action/package_show?id=${d.name}`}>{`package_show?id=${d.name}`}</a>
+        {t('dataset.record')}<a href={`${CKAN_PUBLIC}/api/3/action/package_show?id=${d.name}`}>{`package_show?id=${d.name}`}</a>
         {' · '}
-        <a href="/api-explorer">Explorateur d'API interactif</a>
+        <a href="/api-explorer">{t('dataset.apiExplorer')}</a>
       </p>
       {geoOk && (
         <div className="carte">
-          <h3>🌍 API géographiques</h3>
+          <h3>{t('dataset.geoApis')}</h3>
           <p className="meta">
             <a href={`${geoUrl}/collections/${d.name}`}>OGC API Features</a>
             {' · '}
             <a href={`${geoUrl}/collections/${d.name}/items?f=json&limit=1000`}>GeoJSON</a>
             {' · '}
-            <a href={`${CKAN_PUBLIC}/wms/${d.organization?.name}?SERVICE=WMS&REQUEST=GetCapabilities`}>WMS (organisation)</a>
+            <a href={`${CKAN_PUBLIC}/wms/${d.organization?.name}?SERVICE=WMS&REQUEST=GetCapabilities`}>{t('dataset.wmsOrganization')}</a>
             {' · '}
             <a href={`${CKAN_PUBLIC}/wfs?map=/mapserver/mapfiles/${d.name}.map&SERVICE=WFS&VERSION=2.0.0&REQUEST=GetCapabilities`}>WFS</a>
           </p>
-          <p className="meta">Utilisables dans QGIS, MapLibre/Leaflet et tout client OGC.</p>
+          <p className="meta">{t('dataset.ogcClients')}</p>
         </div>
       )}
 
       <p className="meta">
-        Administration (connexion requise) :{' '}
-        <a href={`${CKAN_PUBLIC}/dataset/edit/${d.name}`}>modifier les métadonnées</a>
+        {t('dataset.administration')}{' '}
+        <a href={`${CKAN_PUBLIC}/dataset/edit/${d.name}`}>{t('dataset.editMetadata')}</a>
         {' · '}
-        <a href={`${CKAN_PUBLIC}/dataset/${d.name}/resources`}>gérer les données</a>
+        <a href={`${CKAN_PUBLIC}/dataset/${d.name}/resources`}>{t('dataset.manageData')}</a>
       </p>
 
       {admin && (

@@ -2,6 +2,7 @@
 // Gestion des modèles DOLFIN depuis le portail (admin d'instance). Liste, création,
 // édition, suppression, avec suivi des modifications (auteur, date, versions).
 import { useState, useEffect } from 'react';
+import { useT } from './I18nProvider';
 
 const EMPTY = { slug: '', type: '', titre: '', desc: '', champs: '', geo: false, dolfin: '' };
 
@@ -11,6 +12,7 @@ function fmtDate(s) {
 }
 
 export default function DolfinModels() {
+  const t = useT();
   const [models, setModels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState(null);      // null = liste ; objet = éditeur
@@ -28,14 +30,14 @@ export default function DolfinModels() {
     setModels(r.ok ? (d.models || []) : []);
     setUsage(r.ok ? (d.usage || {}) : {});
     setInstanceOrg(r.ok ? (d.instanceOrg || '') : '');
-    if (!r.ok) setMsg(d.error || 'erreur de chargement');
+    if (!r.ok) setMsg(d.error || t('dolfin.msg_load_error'));
     setLoading(false);
   }
   useEffect(() => { load(); }, []);
 
   function openNew() { setForm({ ...EMPTY }); setPreview(''); setMsg(''); }
   function openEdit(m) {
-    setForm({ slug: m.builtin ? '' : m.slug, type: m.type, titre: m.builtin ? m.titre + ' (copie)' : m.titre,
+    setForm({ slug: m.builtin ? '' : m.slug, type: m.type, titre: m.builtin ? m.titre + t('dolfin.copy_suffix') : m.titre,
               desc: m.desc || '', champs: (m.champs || []).join(', '), geo: !!m.geo, dolfin: m.dolfin || '' });
     setPreview(''); setMsg('');
   }
@@ -47,7 +49,7 @@ export default function DolfinModels() {
     const champs = [];
     src.split('\n').forEach((l) => { const m = l.match(/^\s*has\s+([A-Za-z_][A-Za-z0-9_]*)\s*:/); if (m && champs.indexOf(m[1]) < 0) champs.push(m[1]); });
     const geo = /\b(lat|lon|latitude|longitude|location|geo)\b/i.test(src);
-    setPreview(champs.length ? ('Champs détectés : ' + champs.join(', ') + (geo ? ' · géolocalisé' : '')) : '');
+    setPreview(champs.length ? (t('dolfin.detected_prefix') + champs.join(', ') + (geo ? t('dolfin.geo_suffix') : '')) : '');
   }
 
   async function save() {
@@ -59,50 +61,48 @@ export default function DolfinModels() {
     if (externes.length) {
       const orgs = [...new Set(externes.map((j) => j.org_title || j.org))].join(', ');
       const ok = window.confirm(
-        `Ce modèle est utilisé par ${used.length} jeu(x), dont ${externes.length} hors de votre `
-        + `organisation (${orgs}). En l'enregistrant, ces jeux seront signalés « à régénérer » `
-        + `à leurs responsables. Continuer ?`);
+        t('dolfin.confirm_external', { used: used.length, ext: externes.length, orgs }));
       if (!ok) return;
     }
-    setMsg('enregistrement + compilation…');
+    setMsg(t('dolfin.msg_saving_compile'));
     const r = await fetch('/api/dolfin/models', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form),
     });
     const d = await r.json();
     if (r.ok) {
       const n = (d.impacted || []).length;
-      setMsg(n ? `✔ enregistré, ${n} jeu(x) signalé(s) à régénérer` : '✔ enregistré');
+      setMsg(n ? t('dolfin.msg_saved_impacted', { n }) : t('dolfin.msg_saved'));
       setForm(null); load();
-    } else setMsg(d.error || 'échec');
+    } else setMsg(d.error || t('dolfin.msg_failed'));
   }
 
   async function remove(slug) {
-    if (!window.confirm('Supprimer ce modèle ?')) return;
+    if (!window.confirm(t('dolfin.confirm_delete'))) return;
     const r = await fetch('/api/dolfin/models/delete', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug }),
     });
-    if (r.ok) load(); else setMsg('échec de la suppression');
+    if (r.ok) load(); else setMsg(t('dolfin.msg_delete_failed'));
   }
 
-  if (loading) return <p className="meta">chargement…</p>;
+  if (loading) return <p className="meta">{t('dolfin.loading')}</p>;
 
   if (form) {
     return (
       <div className="carte edition">
-        <h3>{form.slug ? 'Éditer un modèle' : 'Nouveau modèle DOLFIN'}</h3>
-        <label>Titre<input value={form.titre} onChange={set('titre')} placeholder="Points d'intérêt (POI)" /></label>
-        <label>Type (Smart Data Model)<input value={form.type} onChange={set('type')} placeholder="PointOfInterest" /></label>
-        <label>Description<input value={form.desc} onChange={set('desc')} /></label>
-        <label>Champs (séparés par des virgules)<input value={form.champs} onChange={set('champs')} placeholder="name, category, address" /></label>
-        <label className="meta"><input type="checkbox" checked={form.geo} onChange={set('geo')} /> Géolocalisé (longitude / latitude)</label>
-        <label>Source .dolfin (optionnel, compilée / validée à l'enregistrement)
+        <h3>{form.slug ? t('dolfin.form_edit_title') : t('dolfin.form_new_title')}</h3>
+        <label>{t('dolfin.form_label_title')}<input value={form.titre} onChange={set('titre')} placeholder={t('dolfin.form_title_ph')} />
+        <label>{t('dolfin.form_label_type')}<input value={form.type} onChange={set('type')} placeholder="PointOfInterest" /></label>
+        <label>{t('dolfin.form_label_desc')}<input value={form.desc} onChange={set('desc')} /></label>
+        <label>{t('dolfin.form_label_fields')}<input value={form.champs} onChange={set('champs')} placeholder="name, category, address" /></label>
+        <label className="meta"><input type="checkbox" checked={form.geo} onChange={set('geo')} /> {t('dolfin.form_geo')}</label>
+        <label>{t('dolfin.form_label_source')}
           <textarea rows={12} value={form.dolfin} onChange={onDolfinChange} style={{ fontFamily: 'monospace' }}
             placeholder={'package <http://exemple/uc/poi>:\n  dolfin_version "1"\n\nconcept PointOfInterest:\n  has name: one string\n  has category: optional string'} />
         </label>
         {preview && <p className="meta">{preview}</p>}
         <p>
-          <button className="bouton-admin" onClick={save}>Enregistrer + compiler</button>{' '}
-          <button className="bouton-admin secondaire" onClick={() => setForm(null)}>Annuler</button>{' '}
+          <button className="bouton-admin" onClick={save}>{t('dolfin.form_save')}</button>{' '}
+          <button className="bouton-admin secondaire" onClick={() => setForm(null)}>{t('dolfin.cancel')}</button>{' '}
           <span className="meta">{msg}</span>
         </p>
       </div>
@@ -111,11 +111,11 @@ export default function DolfinModels() {
 
   return (
     <div>
-      <p><button className="bouton-admin" onClick={openNew}>+ Nouveau modèle</button> <span className="meta">{msg}</span></p>
+      <p><button className="bouton-admin" onClick={openNew}>{t('dolfin.new_model')}</button> <span className="meta">{msg}</span></p>
       <div className="defilable">
         <table className="donnees">
           <thead>
-            <tr><th>Titre</th><th>Type</th><th>Champs</th><th>Géo</th><th>Origine</th><th>Utilisé par</th><th>Dernière modif.</th><th></th></tr>
+            <tr><th>{t('dolfin.th_title')}</th><th>{t('dolfin.th_type')}</th><th>{t('dolfin.th_fields')}</th><th>{t('dolfin.th_geo')}</th><th>{t('dolfin.th_origin')}</th><th>{t('dolfin.th_used_by')}</th><th>{t('dolfin.th_last_modif')}</th><th></th></tr>
           </thead>
           <tbody>
             {models.map((m) => (
@@ -125,11 +125,11 @@ export default function DolfinModels() {
                   <td><code>{m.type}</code></td>
                   <td className="meta">{(m.champs || []).join(', ')}</td>
                   <td>{m.geo ? '✔' : ''}</td>
-                  <td>{m.builtin ? <span className="badge">intégré</span> : <span className="badge">personnalisé</span>}</td>
+                  <td>{m.builtin ? <span className="badge">{t('dolfin.builtin')}</span> : <span className="badge">{t('dolfin.custom')}</span>}</td>
                   <td className="meta">
                     {(usage[m.type] || []).length
-                      ? <a href="#" onClick={(e) => { e.preventDefault(); setUseOpen(useOpen === m.type ? '' : m.type); }}>{usage[m.type].length} jeu(x)</a>
-                      : <span className="meta">aucun</span>}
+                      ? <a href="#" onClick={(e) => { e.preventDefault(); setUseOpen(useOpen === m.type ? '' : m.type); }}>{t('dolfin.n_datasets', { n: usage[m.type].length })}</a>
+                      : <span className="meta">{t('dolfin.none')}</span>}
                   </td>
                   <td className="meta">
                     {m.builtin ? '—' : (
@@ -137,24 +137,24 @@ export default function DolfinModels() {
                         {m.updated_by ? `${m.updated_by}` : ''}{m.updated_at ? ` · ${fmtDate(m.updated_at)}` : ''}
                         {(m.history || []).length ? (
                           <> · <a href="#" onClick={(e) => { e.preventDefault(); setHistOpen(histOpen === m.slug ? '' : m.slug); }}>
-                            {m.history.length} version(s)</a></>
+                            {t('dolfin.n_versions', { n: m.history.length })}</a></>
                         ) : null}
                       </>
                     )}
                   </td>
                   <td>
                     {m.builtin
-                      ? <button className="bouton-admin secondaire" onClick={() => openEdit(m)}>Dupliquer</button>
+                      ? <button className="bouton-admin secondaire" onClick={() => openEdit(m)}>{t('dolfin.duplicate')}</button>
                       : <>
-                          <button className="bouton-admin secondaire" onClick={() => openEdit(m)}>Éditer</button>{' '}
-                          <button className="bouton-admin secondaire" onClick={() => remove(m.slug)}>Supprimer</button>
+                          <button className="bouton-admin secondaire" onClick={() => openEdit(m)}>{t('dolfin.edit')}</button>{' '}
+                          <button className="bouton-admin secondaire" onClick={() => remove(m.slug)}>{t('dolfin.delete')}</button>
                         </>}
                   </td>
                 </tr>
                 {histOpen === m.slug && (
                   <tr key={m.slug + '-h'}>
                     <td colSpan={8} className="meta">
-                      <strong>Historique :</strong>
+                      <strong>{t('dolfin.history_label')}</strong>
                       <ul>
                         {(m.history || []).slice().reverse().map((h, i) => (
                           <li key={i}>{fmtDate(h.at)} — {h.by} ({h.action})</li>
@@ -166,7 +166,7 @@ export default function DolfinModels() {
                 {useOpen === m.type && (
                   <tr key={m.type + '-u'}>
                     <td colSpan={8} className="meta">
-                      <strong>Jeux utilisant « {m.titre} » :</strong>
+                      <strong>{t('dolfin.used_by_label', { titre: m.titre })}</strong>
                       <ul>
                         {(usage[m.type] || []).map((j) => (
                           <li key={j.name}><a href={`/dataset/${j.name}`}>{j.title || j.name}</a></li>

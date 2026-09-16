@@ -4,8 +4,10 @@
 // outil (/outils/ia). Le démarrage prend 1 à 2 min ; l'état se rafraîchit seul.
 import { useState, useEffect, useCallback } from 'react';
 import { etatGpu } from './GpuStatus';
+import { useT } from './I18nProvider';
 
 export default function GpuControl() {
+  const t = useT();
   const [s, setS] = useState(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
@@ -25,9 +27,9 @@ export default function GpuControl() {
     try {
       const r = await fetch('/api/gpu/wake', { method: 'POST' });
       const d = await r.json().catch(() => ({}));
-      setMsg(r.ok ? 'Démarrage lancé : le GPU sera prêt dans 1 à 2 min.' : (d.error || 'Réveil impossible.'));
+      setMsg(r.ok ? t('gpu.msg_started') : (d.error || t('gpu.msg_wake_failed')));
       setTimeout(charger, 2000);
-    } catch { setMsg('Réveil impossible.'); }
+    } catch { setMsg(t('gpu.msg_wake_failed')); }
     finally { setBusy(false); }
   };
 
@@ -36,15 +38,15 @@ export default function GpuControl() {
   const demarreEnCours = e?.cle === 'demarre';
   return (
     <div className="carte dtz-gpu-control">
-      <h3 style={{ marginBottom: '.4rem' }}>GPU souverain</h3>
+      <h3 style={{ marginBottom: '.4rem' }}>{t('gpu.title')}</h3>
       <p className="meta" style={{ marginBottom: '.6rem' }}>
-        {e ? <>{e.pastille} <strong>{e.texte}</strong></> : 'État indisponible.'}
+        {e ? <>{e.pastille} <strong>{e.texte}</strong></> : t('gpu.status_unavailable')}
         {s?.billing_remaining_minutes != null && enMarche
-          && <> · s'éteint dans ~{Math.max(0, Math.round(s.billing_remaining_minutes))} min sans activité</>}
+          && <> · {t('gpu.shutdown_in', { n: Math.max(0, Math.round(s.billing_remaining_minutes)) })}</>}
       </p>
       <button className="bouton-admin" onClick={demarrer}
               disabled={busy || enMarche || demarreEnCours}>
-        {enMarche ? 'Déjà en marche' : demarreEnCours ? '⏳ Démarrage…' : busy ? '⏳ …' : '▶ Démarrer le GPU'}
+        {enMarche ? t('gpu.btn_running') : demarreEnCours ? t('gpu.btn_starting') : busy ? '⏳ …' : t('gpu.btn_start')}
       </button>
       {msg && <p className="meta" style={{ marginTop: '.5rem' }}>{msg}</p>}
     </div>

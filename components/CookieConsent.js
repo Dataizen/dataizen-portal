@@ -5,10 +5,12 @@
 // n'est activé, le bandeau ne sert qu'à l'information et au recueil du choix ;
 // il pose la base pour activer plus tard une mesure d'audience conditionnée.
 import { useEffect, useState } from 'react';
+import { useT } from './I18nProvider';
 
 const CLE = 'dtz-consent';
 
 export default function CookieConsent({ enSavoirPlus = '/pages/mentions-legales' }) {
+  const t = useT();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -33,18 +35,18 @@ export default function CookieConsent({ enSavoirPlus = '/pages/mentions-legales'
   if (!visible) return null;
   return (
     <div className="dtz-cookies" role="dialog" aria-live="polite"
-         aria-label="Consentement aux cookies">
+         aria-label={t('cookies.dialogAria')}>
       <div className="dtz-cookies-txt">
-        <strong>Nous utilisons des cookies pour améliorer votre expérience.</strong>{' '}
-        <span>En cliquant sur « Accepter », vous acceptez leur utilisation.</span>{' '}
-        <a href={enSavoirPlus}>En savoir plus</a>
+        <strong>{t('cookies.title')}</strong>{' '}
+        <span>{t('cookies.body')}</span>{' '}
+        <a href={enSavoirPlus}>{t('cookies.learnMore')}</a>
       </div>
       <div className="dtz-cookies-actions">
         <button type="button" className="dtz-cookies-refuser" onClick={() => choisir('refuse')}>
-          Non, merci
+          {t('cookies.decline')}
         </button>
         <button type="button" className="dtz-cookies-accepter" onClick={() => choisir('accepte')}>
-          Accepter
+          {t('cookies.accept')}
         </button>
       </div>
     </div>

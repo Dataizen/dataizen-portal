@@ -4,6 +4,7 @@ import { formatTaille, tailleDataset } from '../lib/format';
 import { nomDepartement } from '../lib/departements';
 import { nomRegion } from '../lib/regions';
 import FacetteCarteTerritoire from './FacetteCarteTerritoire';
+import { t } from '../lib/i18n';
 
 // vrai si le jeu est périmé (extra validite_fin dépassée)
 function estPerime(d, aujourdhui) {
@@ -53,20 +54,20 @@ function FacetteTerritoire({ items, params }) {
   const codes = depts.map((d) => d.code).join(',');
   const counts = Object.fromEntries(depts.map((d) => [d.code, d.count]));
   const filtreActif = params.territoire
-    ? `Département : ${nomDepartement(params.territoire)}`
-    : params.territoire_region ? `Région : ${nomRegion(params.territoire_region)}` : '';
+    ? t('catalogue.department', { n: nomDepartement(params.territoire) })
+    : params.territoire_region ? t('catalogue.region', { n: nomRegion(params.territoire_region) }) : '';
   return (
     <div className="facette">
-      <h4>Territoire</h4>
+      <h4>{t('catalogue.territory')}</h4>
       {filtreActif && (
         <p className="meta">{filtreActif} · <a href={lienFacette(params, 'territoire', params.territoire)
-          .replace(/territoire_region=[^&]*/, '')}>retirer</a></p>
+          .replace(/territoire_region=[^&]*/, '')}>{t('catalogue.remove')}</a></p>
       )}
-      <div className="dtz-facette-territoire" role="group" aria-label="Choisir un territoire sur la carte"
+      <div className="dtz-facette-territoire" role="group" aria-label={t('catalogue.chooseTerritoryMap')}
         data-codes={codes} data-counts={JSON.stringify(counts)}
         data-sel-dept={params.territoire || ''} data-sel-region={params.territoire_region || ''} />
       <details>
-        <summary className="meta">Liste des départements</summary>
+        <summary className="meta">{t('catalogue.departmentList')}</summary>
         <ul>
           {depts.map((d) => (
             <li key={d.code}>
@@ -93,7 +94,7 @@ function FacetteTheme({ params }) {
   };
   return (
     <div className="facette">
-      <h4>Thématiques</h4>
+      <h4>{t('catalogue.themes')}</h4>
       <ul>
         {THEMES.map((t) => (
           <li key={t}><a className={params.theme === t ? 'actif' : ''} href={lien(t)}>{t}</a></li>
@@ -112,10 +113,10 @@ function FiltreValidite({ params }) {
   };
   return (
     <div className="facette">
-      <h4>Validité</h4>
+      <h4>{t('catalogue.validity')}</h4>
       <ul>
-        <li><a className={params.perime === 'cacher' ? 'actif' : ''} href={lien('cacher')}>Masquer les périmés</a></li>
-        <li><a className={params.perime === 'seuls' ? 'actif' : ''} href={lien('seuls')}>Périmés seulement</a></li>
+        <li><a className={params.perime === 'cacher' ? 'actif' : ''} href={lien('cacher')}>{t('catalogue.hideExpired')}</a></li>
+        <li><a className={params.perime === 'seuls' ? 'actif' : ''} href={lien('seuls')}>{t('catalogue.expiredOnly')}</a></li>
       </ul>
     </div>
   );
@@ -130,10 +131,10 @@ function FiltreHarmonisation({ params }) {
   };
   return (
     <div className="facette">
-      <h4>Harmonisation DOLFIN</h4>
+      <h4>{t('catalogue.dolfinHarmonization')}</h4>
       <ul>
-        <li><a className={params.harmonise === 'oui' ? 'actif' : ''} href={lien('oui')}>Harmonisés (avec modèle)</a></li>
-        <li><a className={params.harmonise === 'non' ? 'actif' : ''} href={lien('non')}>Non harmonisés</a></li>
+        <li><a className={params.harmonise === 'oui' ? 'actif' : ''} href={lien('oui')}>{t('catalogue.harmonizedWithModel')}</a></li>
+        <li><a className={params.harmonise === 'non' ? 'actif' : ''} href={lien('non')}>{t('catalogue.notHarmonized')}</a></li>
       </ul>
     </div>
   );
@@ -148,10 +149,10 @@ function FiltreUtilisation({ params }) {
   };
   return (
     <div className="facette">
-      <h4>Utilisation</h4>
+      <h4>{t('catalogue.usage')}</h4>
       <ul>
-        <li><a className={params.utilise === 'oui' ? 'actif' : ''} href={lien('oui')}>Utilisés (sur une page)</a></li>
-        <li><a className={params.utilise === 'non' ? 'actif' : ''} href={lien('non')}>Non utilisés</a></li>
+        <li><a className={params.utilise === 'oui' ? 'actif' : ''} href={lien('oui')}>{t('catalogue.usedOnPage')}</a></li>
+        <li><a className={params.utilise === 'non' ? 'actif' : ''} href={lien('non')}>{t('catalogue.notUsed')}</a></li>
       </ul>
     </div>
   );
@@ -184,85 +185,84 @@ export default async function CatalogueView({ sp, orgs = null }) {
   return (
     <div>
       <form className="recherche" action="/catalogue" method="get">
-        <input type="search" name="q" defaultValue={q} placeholder="Rechercher un jeu de données…" />
+        <input type="search" name="q" defaultValue={q} placeholder={t('catalogue.searchPlaceholder')} />
         {theme && <input type="hidden" name="theme" value={theme} />}
-        <button type="submit">Rechercher</button>
+        <button type="submit">{t('catalogue.search')}</button>
       </form>
       {theme && (
         <p className="meta">
-          Thème : <strong>{theme}</strong> · <a href="/catalogue">retirer le filtre</a>
+          {t('catalogue.theme')}<strong>{theme}</strong> · <a href="/catalogue">{t('catalogue.removeFilter')}</a>
         </p>
       )}
       {orgs && (
         <p className="meta">
-          Périmètre du catalogue : {orgs.length ? orgs.join(', ') : 'aucune organisation'}
-          {' '}<span title="Réglable dans Directus, Réglages du portail">(réglage de l'instance)</span>
+          {t('catalogue.scope', { orgs: orgs.length ? orgs.join(', ') : t('catalogue.noOrganization') })}
+          {' '}<span title={t('catalogue.instanceSettingTitle')}>{t('catalogue.instanceSetting')}</span>
         </p>
       )}
 
       <div className="layout">
         <aside>
-          <Facette titre="Organisations" items={r.search_facets?.organization?.items} cle="organization" params={params} />
+          <Facette titre={t('catalogue.organizations')} items={r.search_facets?.organization?.items} cle="organization" params={params} />
           <FacetteTerritoire items={r.search_facets?.extras_territoires?.items} params={params} />
           <FacetteCarteTerritoire />
           <FacetteTheme params={params} />
-          <Facette titre="Formats" items={r.search_facets?.res_format?.items} cle="format" params={params} />
-          <Facette titre="Mots-clés" items={r.search_facets?.tags?.items} cle="tags" params={params} />
+          <Facette titre={t('catalogue.formats')} items={r.search_facets?.res_format?.items} cle="format" params={params} />
+          <Facette titre={t('catalogue.keywords')} items={r.search_facets?.tags?.items} cle="tags" params={params} />
           <FiltreValidite params={params} />
           <FiltreHarmonisation params={params} />
           <FiltreUtilisation params={params} />
         </aside>
 
         <section>
-          <p className="meta">{r.count} jeu(x) de données</p>
+          <p className="meta">{t('catalogue.results', { n: r.count })}</p>
           {r.results.map((d) => (
             <article className="carte" key={d.name}>
               <h3><a href={`/dataset/${d.name}`}>{d.title || d.name}</a>
                 {estPerime(d, aujourdhui) && (
-                  <span className="badge perime" title="Données périmées (fin de validité dépassée)"> Périmé</span>
+                  <span className="badge perime" title={t('catalogue.expiredTitle')}>{t('catalogue.expiredBadge')}</span>
                 )}
                 {(d.extras || []).some((e) => e.key === 'dolfin_mapping') && (
-                  <span className="badge" title="Jeu harmonisé (modèle pivot DOLFIN)"> harmonisé</span>
+                  <span className="badge" title={t('catalogue.harmonizedTitle')}>{t('catalogue.harmonizedBadge')}</span>
                 )}
                 {(() => {
                   const u = (d.extras || []).find((e) => e.key === 'usages_instances');
                   return u && u.value ? (
-                    <span className="badge" title={`Utilisé sur une page de : ${u.value}`}> utilisé</span>
+                    <span className="badge" title={t('catalogue.usedTitle', { n: u.value })}>{t('catalogue.usedBadge')}</span>
                   ) : null;
                 })()}
               </h3>
               {d.notes && <p>{d.notes.length > 220 ? d.notes.slice(0, 220) + '…' : d.notes}</p>}
               <p className="meta">
-                {d.organization?.title || 'Sans organisation'}
+                {d.organization?.title || t('catalogue.noOrganizationName')}
                 {' · '}
                 {[...new Set((d.resources || []).map((res) => res.format).filter(Boolean))].map((f) => (
                   <span className="badge" key={f}>{f}</span>
                 ))}
                 {tailleDataset(d.resources) && (
-                  <span title="Poids total des fichiers de données">{' · '}{formatTaille(tailleDataset(d.resources))}</span>
+                  <span title={t('catalogue.totalWeightTitle')}>{' · '}{formatTaille(tailleDataset(d.resources))}</span>
                 )}
               </p>
             </article>
           ))}
           <div className="pagination">
             {start > 0 && (
-              <a href={`/catalogue?${new URLSearchParams({ ...params, start: Math.max(0, start - rows) })}`}>← Précédent</a>
+              <a href={`/catalogue?${new URLSearchParams({ ...params, start: Math.max(0, start - rows) })}`}>{t('catalogue.previous')}</a>
             )}
             {start + rows < r.count && (
-              <a href={`/catalogue?${new URLSearchParams({ ...params, start: start + rows })}`}>Suivant →</a>
+              <a href={`/catalogue?${new URLSearchParams({ ...params, start: start + rows })}`}>{t('catalogue.next')}</a>
             )}
           </div>
         </section>
       </div>
 
       <div className="carte" style={{ marginTop: '1.5rem' }}>
-        <h3>Catalogue interopérable</h3>
+        <h3>{t('catalogue.interoperable')}</h3>
         <p>
-          Les métadonnées sont exposées au format standard <strong>DCAT-AP</strong>, moissonnable
-          par data.gouv.fr et tout agrégateur compatible (identifiants stables, JSON-LD, RDF).
+          {t('catalogue.metadataExposed')}<strong>DCAT-AP</strong>{t('catalogue.harvestable')}
         </p>
         <p className="meta">
-          Flux du catalogue :{' '}
+          {t('catalogue.feed')}{' '}
           <a href={`${CKAN_PUBLIC}/catalog.xml`}>RDF/XML</a>
           {' · '}
           <a href={`${CKAN_PUBLIC}/catalog.ttl`}>Turtle</a>
@@ -270,8 +270,7 @@ export default async function CatalogueView({ sp, orgs = null }) {
           <a href={`${CKAN_PUBLIC}/catalog.jsonld`}>JSON-LD</a>
         </p>
         <p className="meta">
-          API de données : <a href="/api-explorer">explorateur d'API interactif</a> (documentation
-          des API générées automatiquement pour chaque jeu de données public)
+          {t('catalogue.dataApi')}<a href="/api-explorer">{t('catalogue.apiExplorer')}</a>{t('catalogue.apiDoc')}
         </p>
       </div>
     </div>

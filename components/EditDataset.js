@@ -2,8 +2,10 @@
 // Édition intégrée des métadonnées (admins et déposant). Les champs viennent
 // de lib/metadata.js : en ajouter là-bas suffit pour qu'ils apparaissent ici.
 import { useState } from 'react';
+import { useT } from './I18nProvider';
 
 export default function EditDataset({ name, title, notes, tags, extras, fields, admin, isPrivate, licenses = [], licenseId }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [values, setValues] = useState({
     title: title || '',
@@ -20,7 +22,7 @@ export default function EditDataset({ name, title, notes, tags, extras, fields, 
   // Complète les champs VIDES avec une proposition IA (post-dépôt, à la demande).
   // Ne remplace jamais une valeur déjà saisie ; l'utilisateur vérifie puis enregistre.
   const completerIA = async () => {
-    setAiBusy(true); setMsg("l'IA analyse les données…");
+    setAiBusy(true); setMsg(t('edit.msg_ai_analyzing'));
     try {
       const r = await fetch('/api/dataset/metadata-propose', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -28,7 +30,7 @@ export default function EditDataset({ name, title, notes, tags, extras, fields, 
       });
       const d = await r.json();
       if (d.warming) { setMsg(d.message); setAiBusy(false); return; }
-      if (d.error) { setMsg('IA : ' + d.error); setAiBusy(false); return; }
+      if (d.error) { setMsg(t('edit.ai_error_prefix') + d.error); setAiBusy(false); return; }
       setValues((v) => {
         const nv = { ...v };
         if (d.title && !v.title.trim()) nv.title = d.title;
@@ -39,38 +41,38 @@ export default function EditDataset({ name, title, notes, tags, extras, fields, 
         }
         return nv;
       });
-      setMsg('✨ Champs vides complétés par l’IA : vérifiez puis enregistrez.');
-    } catch { setMsg('IA indisponible.'); }
+      setMsg(t('edit.msg_ai_filled'));
+    } catch { setMsg(t('edit.msg_ai_unavailable')); }
     setAiBusy(false);
   };
 
   const save = async () => {
-    setMsg('enregistrement…');
+    setMsg(t('edit.msg_saving'));
     const r = await fetch('/api/dataset/edit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, ...values }),
     });
     if (r.ok) {
-      setMsg('✔ enregistré');
+      setMsg(t('edit.msg_saved'));
       setTimeout(() => window.location.reload(), 700);
     } else {
-      setMsg(r.status === 401 ? 'session expirée : reconnectez-vous' : 'erreur d’enregistrement');
+      setMsg(r.status === 401 ? t('edit.msg_session_expired') : t('edit.msg_save_error'));
     }
   };
 
   if (!open) {
     return (
       <button className="bouton-admin" onClick={() => setOpen(true)}>
-        ✏️ Modifier les métadonnées
+        {t('edit.open_button')}
       </button>
     );
   }
   return (
     <div className="carte edition">
-      <label>Titre</label>
+      <label>{t('edit.label_title')}</label>
       <input value={values.title} onChange={set('title')} />
-      <label>Description</label>
+      <label>{t('edit.label_description')}</label>
       <textarea rows={5} value={values.notes} onChange={set('notes')} />
       {(fields || []).map((f) => (
         <div key={f.key}>
@@ -86,11 +88,11 @@ export default function EditDataset({ name, title, notes, tags, extras, fields, 
           )}
         </div>
       ))}
-      <label>Mots-clés (séparés par des virgules)</label>
+      <label>{t('edit.label_tags')}</label>
       <input value={values.tags} onChange={set('tags')} />
       {licenses.length > 0 && (
         <>
-          <label>Licence</label>
+          <label>{t('edit.label_license')}</label>
           <select value={values.license_id} onChange={set('license_id')}>
             {licenses.map((l) => <option key={l.id} value={l.id}>{l.title}</option>)}
           </select>
@@ -98,19 +100,19 @@ export default function EditDataset({ name, title, notes, tags, extras, fields, 
       )}
       {admin && (
         <>
-          <label>Visibilité</label>
+          <label>{t('edit.label_visibility')}</label>
           <select value={values.visibility} onChange={set('visibility')}>
-            <option value="private">Privé (brouillon)</option>
-            <option value="public">Public (visible au catalogue)</option>
+            <option value="private">{t('edit.vis_private')}</option>
+            <option value="public">{t('edit.vis_public')}</option>
           </select>
         </>
       )}
       <p>
-        <button className="bouton-admin" onClick={save}>Enregistrer</button>{' '}
+        <button className="bouton-admin" onClick={save}>{t('edit.save')}</button>{' '}
         <button className="bouton-admin secondaire" onClick={completerIA} disabled={aiBusy}>
-          {aiBusy ? '⏳ L’IA analyse…' : '✨ Compléter avec l’IA'}
+          {aiBusy ? t('edit.ai_analyzing') : t('edit.ai_complete')}
         </button>{' '}
-        <button className="bouton-admin secondaire" onClick={() => setOpen(false)}>Annuler</button>{' '}
+        <button className="bouton-admin secondaire" onClick={() => setOpen(false)}>{t('edit.cancel')}</button>{' '}
         <span className="meta">{msg}</span>
       </p>
     </div>

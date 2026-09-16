@@ -3,6 +3,7 @@ import { getSession, isAdmin } from '../../../lib/session';
 import { assetUrl } from '../../../lib/themes';
 import { notFound } from 'next/navigation';
 import RapportLayout from '../../../components/RapportLayout';
+import { t } from '../../../lib/i18n';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,20 +32,20 @@ export default async function PageEditoriale({ params }) {
     if (j && Array.isArray(j.sections)) rapport = j;
   } catch { /* contenu HTML classique */ }
   const bandeauApercu = apercu ? (
-    <div className="dtz-apercu" role="status">Aperçu, page en brouillon non publiée.</div>
+    <div className="dtz-apercu" role="status">{t('page.previewBanner')}</div>
   ) : null;
   if (rapport) {
     return (
       <article className="carte page-editoriale page-rapport">
         {bandeauApercu}
         <RapportLayout title={page.title} intro={rapport.intro || []} sections={rapport.sections}
-                       parent={{ title: "Rapports d'analyse", slug: 'rapports-analyse' }} />
+                       parent={{ title: t('page.reportsParent'), slug: 'rapports-analyse' }} />
       </article>
     );
   }
   // bannière : image de la page, sinon dégradé aux couleurs de la thématique
   const thematiques = await getThematiques();
-  const th = thematiques.find((t) => t.slug === slug);
+  const th = thematiques.find((x) => x.slug === slug);
   const img = assetUrl(page.image);
   const hex = th?.couleur && /^#[0-9a-fA-F]{6}$/.test(th.couleur) ? th.couleur : null;
   const fond = img
