@@ -3,6 +3,7 @@
 // de lib/metadata.js : en ajouter là-bas suffit pour qu'ils apparaissent ici.
 import { useState } from 'react';
 import { useT } from './I18nProvider';
+import { themeCode } from '../lib/metadata';
 
 export default function EditDataset({ name, title, notes, tags, extras, fields, admin, isPrivate, licenses = [], licenseId }) {
   const t = useT();
@@ -13,7 +14,10 @@ export default function EditDataset({ name, title, notes, tags, extras, fields, 
     tags: (tags || []).join(', '),
     visibility: isPrivate ? 'private' : 'public',
     license_id: licenseId || 'notspecified',
-    ...Object.fromEntries((fields || []).map((f) => [f.key, extras?.[f.key] || ''])),
+    // le thème peut être stocké en ancien libellé FR (non migré) : on le normalise en
+    // code EU pour qu'il corresponde à une option du menu.
+    ...Object.fromEntries((fields || []).map((f) => [f.key,
+      f.i18nOptions === 'theme' ? (themeCode(extras?.[f.key]) || '') : (extras?.[f.key] || '')])),
   });
   const [msg, setMsg] = useState('');
   const [aiBusy, setAiBusy] = useState(false);
@@ -80,7 +84,7 @@ export default function EditDataset({ name, title, notes, tags, extras, fields, 
           {f.type === 'select' ? (
             <select value={values[f.key]} onChange={set(f.key)}>
               <option value="">-</option>
-              {f.options.map((o) => <option key={o} value={o}>{o}</option>)}
+              {f.options.map((o) => <option key={o} value={o}>{f.i18nOptions ? t(`${f.i18nOptions}.${o}`) : o}</option>)}
             </select>
           ) : (
             <input type={f.type === 'date' ? 'date' : 'text'} value={values[f.key]}

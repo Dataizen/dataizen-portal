@@ -3,7 +3,7 @@ import { getDataset, getDatasetPrivileged, previewDatastore, previewDatastorePri
 import { detectGeo } from '../../../lib/geo';
 import { getReusesForDataset } from '../../../lib/directus';
 import { getSession, isAdmin } from '../../../lib/session';
-import { METADATA_FIELDS, extrasToObject } from '../../../lib/metadata';
+import { METADATA_FIELDS, extrasToObject, themeCode } from '../../../lib/metadata';
 import { formatTaille, tailleDataset } from '../../../lib/format';
 import { suggestionsFromMapping } from '../../../lib/dolfin';
 import EditDataset from '../../../components/EditDataset';
@@ -218,7 +218,8 @@ export default async function FicheDataset({ params }) {
           )}
           {METADATA_FIELDS.filter((f) => extras[f.key] && !f.key.startsWith('validite_')).map((f) => (
             <div key={f.key} style={{ display: 'contents' }}>
-              <dt>{f.label}</dt><dd>{extras[f.key]}</dd>
+              <dt>{f.label}</dt><dd>{f.i18nOptions === 'theme' && themeCode(extras[f.key])
+                ? t('theme.' + themeCode(extras[f.key])) : extras[f.key]}</dd>
             </div>
           ))}
           {extras.depose_par && (

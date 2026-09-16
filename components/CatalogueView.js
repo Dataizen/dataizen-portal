@@ -1,5 +1,5 @@
 import { searchDatasets, CKAN_PUBLIC } from '../lib/ckan';
-import { extrasToObject, THEMES } from '../lib/metadata';
+import { extrasToObject, THEME_CODES, themeCode } from '../lib/metadata';
 import { formatTaille, tailleDataset } from '../lib/format';
 import { getPays, profil } from '../lib/territoires';
 import FacetteCarteTerritoire from './FacetteCarteTerritoire';
@@ -84,12 +84,13 @@ function FacetteTerritoire({ items, params }) {
   );
 }
 
-// Facette Thématiques : vocabulaire fixe (l'extra `theme` est indexé en texte, non
-// facettable proprement). Filtrage exact par la valeur choisie.
+// Facette Thématiques : vocabulaire EU data-theme (codes), libellés localisés. La valeur
+// dans l'URL et l'extra `theme` est le code (le filtre reste rétro-compatible côté ckan.js).
 function FacetteTheme({ params }) {
-  const lien = (v) => {
+  const actif = themeCode(params.theme);
+  const lien = (code) => {
     const p = new URLSearchParams(params);
-    if (params.theme === v) p.delete('theme'); else p.set('theme', v);
+    if (actif === code) p.delete('theme'); else p.set('theme', code);
     p.delete('start');
     return `/catalogue?${p.toString()}`;
   };
@@ -97,8 +98,8 @@ function FacetteTheme({ params }) {
     <div className="facette">
       <h4>{t('catalogue.themes')}</h4>
       <ul>
-        {THEMES.map((t) => (
-          <li key={t}><a className={params.theme === t ? 'actif' : ''} href={lien(t)}>{t}</a></li>
+        {THEME_CODES.map((code) => (
+          <li key={code}><a className={actif === code ? 'actif' : ''} href={lien(code)}>{t('theme.' + code)}</a></li>
         ))}
       </ul>
     </div>
@@ -192,7 +193,7 @@ export default async function CatalogueView({ sp, orgs = null }) {
       </form>
       {theme && (
         <p className="meta">
-          {t('catalogue.theme')}<strong>{theme}</strong> · <a href="/catalogue">{t('catalogue.removeFilter')}</a>
+          {t('catalogue.theme')}<strong>{themeCode(theme) ? t('theme.' + themeCode(theme)) : theme}</strong> · <a href="/catalogue">{t('catalogue.removeFilter')}</a>
         </p>
       )}
       {orgs && (

@@ -1,7 +1,7 @@
 import { Fragment } from 'react';
 import { getHomeBlocks, getActualites, getThematiques, getIndicateurs, miniMarkdown } from '../lib/directus';
 import { getDataset, searchDatasets, catalogueOrgs } from '../lib/ckan';
-import { THEMES } from '../lib/metadata';
+import { THEME_CODES, themeCode } from '../lib/metadata';
 import { assetUrl } from '../lib/themes';
 import CatalogueView from '../components/CatalogueView';
 import { getSettings } from '../lib/directus';
@@ -110,9 +110,14 @@ async function Themes({ block }) {
         </div>
       ) : (
         <div className="themes">
-          {(block.config?.themes || THEMES).map((t) => (
-            <a className="badge theme" key={t} href={`/catalogue?theme=${encodeURIComponent(t)}`}>{t}</a>
-          ))}
+          {(block.config?.themes || THEME_CODES).map((raw) => {
+            const code = themeCode(raw);
+            const label = code ? t('theme.' + code) : raw;
+            const val = code || raw;
+            return (
+              <a className="badge theme" key={val} href={`/catalogue?theme=${encodeURIComponent(val)}`}>{label}</a>
+            );
+          })}
         </div>
       )}
     </section>

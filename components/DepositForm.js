@@ -141,7 +141,7 @@ export default function DepositForm({ admin, organizations, instanceOrg, license
           {f.type === 'select' ? (
             <select name={f.key} value={vals[f.key] || ''} onChange={setVal(f.key)}>
               <option value="">-</option>
-              {f.options.map((o) => <option key={o} value={o}>{o}</option>)}
+              {f.options.map((o) => <option key={o} value={o}>{f.i18nOptions ? t(`${f.i18nOptions}.${o}`) : o}</option>)}
             </select>
           ) : (
             <input type={f.type === 'date' ? 'date' : 'text'} name={f.key}
