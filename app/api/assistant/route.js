@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { catalogueOrgs } from '../../../lib/ckan';
 import { getSettings } from '../../../lib/directus';
+import { getLang, t } from '../../../lib/i18n';
 
 // Assistant du portail : proxifie le service RAG souverain (dtz-rag) en injectant
 // le périmètre de l'instance (organisations du catalogue + contenu CMS de l'instance).
@@ -14,7 +15,8 @@ export async function POST(request) {
   }
   let orgs = null;
   try { orgs = catalogueOrgs(await getSettings()); } catch { orgs = null; }
-  const scope = { instance: process.env.INSTANCE_NAME || null, orgs };
+  const lang = getLang(); // langue de l'instance (PORTAL_LANG) : l'assistant répond dans cette langue
+  const scope = { instance: process.env.INSTANCE_NAME || null, orgs, lang };
   // contexte de la page consultée : le jeu / la page courante est priorisé
   const c = context || {};
   if (typeof c.dataset === 'string' && /^[a-z0-9_-]{2,100}$/i.test(c.dataset)) {
@@ -28,19 +30,17 @@ export async function POST(request) {
   try {
     const r = await fetch(`${RAG}/answer`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ q, scope, top_k: 6 }),
+      body: JSON.stringify({ q, scope, top_k: 6, lang }),
       signal: AbortSignal.timeout(150000),
     });
     const d = await r.json().catch(() => ({}));
     if (r.status === 503 || d.warming) {
-      return NextResponse.json({ warming: true, message: d.message
-        || "L'assistant démarre le GPU (1 à 2 min). Réessayez dans une minute.",
+      return NextResponse.json({ warming: true, message: d.message || t('assistant.warming'),
         sources: d.sources || [] });
     }
     if (!r.ok) return NextResponse.json({ error: 'assistant indisponible' }, { status: 502 });
     return NextResponse.json(d);
   } catch {
-    return NextResponse.json({ warming: true,
-      message: "L'assistant démarre (le GPU peut mettre 1 à 2 min). Réessayez dans une minute." });
+    return NextResponse.json({ warming: true, message: t('assistant.warming') });
   }
 }

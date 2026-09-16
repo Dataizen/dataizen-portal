@@ -1,8 +1,7 @@
 import { searchDatasets, CKAN_PUBLIC } from '../lib/ckan';
 import { extrasToObject, THEMES } from '../lib/metadata';
 import { formatTaille, tailleDataset } from '../lib/format';
-import { nomDepartement } from '../lib/departements';
-import { nomRegion } from '../lib/regions';
+import { getPays, profil } from '../lib/territoires';
 import FacetteCarteTerritoire from './FacetteCarteTerritoire';
 import { t } from '../lib/i18n';
 
@@ -46,16 +45,18 @@ function Facette({ titre, items, cle, params }) {
 // Carte-sélecteur de territoire (choisir un département ou une région) + liste
 // texte repliée comme équivalent accessible et repli sans JavaScript.
 function FacetteTerritoire({ items, params }) {
+  const prof = profil(getPays());
   const depts = (items || [])
-    .map((it) => ({ code: it.name, nom: nomDepartement(it.name), count: it.count }))
+    .map((it) => ({ code: it.name, nom: prof.nom(it.name), count: it.count }))
     .filter((d) => d.nom)
-    .sort((a, b) => a.nom.localeCompare(b.nom, 'fr'));
+    .sort((a, b) => a.nom.localeCompare(b.nom, prof.pays));
   if (!depts.length) return null;
   const codes = depts.map((d) => d.code).join(',');
   const counts = Object.fromEntries(depts.map((d) => [d.code, d.count]));
   const filtreActif = params.territoire
-    ? t('catalogue.department', { n: nomDepartement(params.territoire) })
-    : params.territoire_region ? t('catalogue.region', { n: nomRegion(params.territoire_region) }) : '';
+    ? t('catalogue.department', { n: prof.nom(params.territoire) })
+    : (params.territoire_region && prof.hasRegions)
+      ? t('catalogue.region', { n: prof.nomRegion(params.territoire_region) }) : '';
   return (
     <div className="facette">
       <h4>{t('catalogue.territory')}</h4>
@@ -64,7 +65,7 @@ function FacetteTerritoire({ items, params }) {
           .replace(/territoire_region=[^&]*/, '')}>{t('catalogue.remove')}</a></p>
       )}
       <div className="dtz-facette-territoire" role="group" aria-label={t('catalogue.chooseTerritoryMap')}
-        data-codes={codes} data-counts={JSON.stringify(counts)}
+        data-pays={prof.pays} data-codes={codes} data-counts={JSON.stringify(counts)}
         data-sel-dept={params.territoire || ''} data-sel-region={params.territoire_region || ''} />
       <details>
         <summary className="meta">{t('catalogue.departmentList')}</summary>

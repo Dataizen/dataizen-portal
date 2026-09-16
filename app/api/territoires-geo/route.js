@@ -1,16 +1,16 @@
 import { NextResponse } from 'next/server';
-import { regionDeDept } from '../../../lib/regions';
+import { getPays, profil } from '../../../lib/territoires';
 
-// Contours des départements demandés (carte-sélecteur de territoire du catalogue).
-// Source : le référentiel CKAN `referentiel-departements-france` (org referentiels),
-// lu en interne (le portail n'a pas d'egress vers Internet). Auto-hébergé (RGESN).
+// Contours du niveau territorial principal (carte-sélecteur du catalogue), selon le
+// PAYS de l'instance : départements (France) ou distritos (Portugal), etc. Source : le
+// référentiel CKAN du profil (org referentiels du pays), lu en interne (le portail n'a
+// pas d'egress vers Internet). Auto-hébergé (RGESN).
 const CKAN = process.env.CKAN_INTERNAL_URL || 'http://ckan:5000';
-const SLUG = 'referentiel-departements-france';
 
 export const dynamic = 'force-dynamic';
 
-async function contoursFrance() {
-  const pr = await fetch(`${CKAN}/api/3/action/package_show?id=${SLUG}`, { next: { revalidate: 604800 } });
+async function contours(slug) {
+  const pr = await fetch(`${CKAN}/api/3/action/package_show?id=${slug}`, { next: { revalidate: 604800 } });
   if (!pr.ok) return null;
   const res = ((await pr.json()).result?.resources || [])
     .find((r) => (r.format || '').toLowerCase() === 'geojson' || /\.geojson(\?|$)/i.test(r.url || ''));
@@ -27,15 +27,16 @@ export async function GET(request) {
   const codes = new Set((sp.get('codes') || '')
     .split(',').map((c) => c.trim().toUpperCase()).filter(Boolean));
   if (!tous && !codes.size) return NextResponse.json({ type: 'FeatureCollection', features: [] });
+  const p = profil(getPays());
   try {
-    const fc = await contoursFrance();
+    const fc = await contours(p.niveauSlug);
     const feats = (fc?.features || [])
       .filter((f) => tous || codes.has(String((f.properties || {}).code).toUpperCase()))
       .map((f) => ({
         type: 'Feature', geometry: f.geometry,
         properties: {
           code: String(f.properties.code), nom: f.properties.nom,
-          region: regionDeDept(f.properties.code),
+          region: p.regionDe(f.properties.code),
         },
       }));
     return NextResponse.json(
