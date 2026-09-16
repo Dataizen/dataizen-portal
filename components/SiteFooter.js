@@ -1,11 +1,12 @@
 // Pied de page réutilisable (toutes instances) : un menu de liens alimenté par
 // Directus (pages marquées « afficher dans le pied de page ») + une ligne de
 // mentions. S'adapte à l'habillage courant (DSFR ou thème standard).
+import { t } from '../lib/i18n';
 
 function Liens({ links, className }) {
   if (!links?.length) return null;
   return (
-    <nav className={className} aria-label="Liens de pied de page">
+    <nav className={className} aria-label={t('a11y.footerNav')}>
       <ul>
         {links.map((l) => (
           <li key={l.href}>
@@ -22,7 +23,7 @@ function Liens({ links, className }) {
 // code source correspondant. Pointe vers l'organisation qui héberge tous les dépôts.
 const SOURCE_URL = 'https://github.com/Dataizen';
 const SourceLink = () => (
-  <a className="footer-source" href={SOURCE_URL} target="_blank" rel="noopener">Code source</a>
+  <a className="footer-source" href={SOURCE_URL} target="_blank" rel="noopener">{t('footer.source')}</a>
 );
 
 export default function SiteFooter({ links = [], text, dsfr = false }) {

@@ -1,0 +1,16 @@
+{
+  "meta.title": "Dataizen: dados territoriais",
+  "meta.description": "Catálogo de dados territoriais aberto, soberano e open source.",
+  "a11y.skip": "Ir para o conteúdo",
+  "a11y.mainNav": "Navegação principal",
+  "a11y.footerNav": "Ligações do rodapé",
+  "nav.actualites": "Notícias",
+  "nav.catalogue": "Catálogo",
+  "nav.homeTitle": "Início: {site}",
+  "nav.login": "Iniciar sessão",
+  "nav.admin": "⚙️ Administração",
+  "nav.deposit": "Depositar dados",
+  "nav.logout": "Terminar sessão",
+  "footer.default": "{site}: plataforma de dados territoriais, open source e alojada de forma soberana.",
+  "footer.source": "Código-fonte"
+}

@@ -19,23 +19,24 @@ import RechercheIndicateur from '../components/RechercheIndicateur';
 import VisualEditing from '../components/VisualEditing';
 import Assistant from '../components/Assistant';
 import GpuStatus from '../components/GpuStatus';
+import { t, getLang } from '../lib/i18n';
+import { I18nProvider } from '../components/I18nProvider';
 
-export const metadata = {
-  title: 'Dataizen : données territoriales',
-  description: 'Catalogue de données territoriales ouvert, souverain et open source.',
-};
+export async function generateMetadata() {
+  return { title: t('meta.title'), description: t('meta.description') };
+}
 
 function SessionLinks({ session }) {
-  if (!session) return <a href="/api/auth/login">Connexion</a>;
+  if (!session) return <a href="/api/auth/login">{t('nav.login')}</a>;
   return (
     <>
       {isAdmin(session) && process.env.NEXT_PUBLIC_ADMIN_URL && (
         <>
-          <a href={process.env.NEXT_PUBLIC_ADMIN_URL}>⚙️ Administration</a> ·{' '}
+          <a href={process.env.NEXT_PUBLIC_ADMIN_URL}>{t('nav.admin')}</a> ·{' '}
         </>
       )}
-      <a href="/deposer">Déposer une donnée</a> · {session.email} ·{' '}
-      <a href="/api/auth/logout">Déconnexion</a>
+      <a href="/deposer">{t('nav.deposit')}</a> · {session.email} ·{' '}
+      <a href="/api/auth/logout">{t('nav.logout')}</a>
     </>
   );
 }
@@ -61,7 +62,7 @@ function DsfrChrome({ site, logo, navPages, session, children, footer, footerPag
                   )}
                 </div>
                 <div className="fr-header__service">
-                  <a href="/" title={`Accueil : ${site}`}>
+                  <a href="/" title={t('nav.homeTitle', { site })}>
                     <p className="fr-header__service-title">{site}</p>
                   </a>
                 </div>
@@ -76,7 +77,7 @@ function DsfrChrome({ site, logo, navPages, session, children, footer, footerPag
         </div>
         <div className="fr-header__menu">
           <div className="fr-container">
-            <nav className="fr-nav" role="navigation" aria-label="Navigation principale">
+            <nav className="fr-nav" role="navigation" aria-label={t('a11y.mainNav')}>
               <ul className="fr-nav__list">
                 {navEntries(navPages, { actualites: true }).map((e) => (
                   <li className="fr-nav__item" key={e.href}>
@@ -112,17 +113,18 @@ export default async function RootLayout({ children }) {
   const css = themeCss(settings);
   const logo = logoUrl(settings);
   const dsfr = settings?.theme_preset === 'dsfr';
-  const footer = settings?.site_description ||
-    `${site} : plateforme de données territoriales, open source et hébergée souverainement.`;
+  const lang = getLang();
+  const footer = settings?.site_description || t('footer.default', { site });
 
   return (
-    <html lang="fr">
+    <html lang={lang}>
       <body className={dsfr ? 'dsfr' : ''}>
+        <I18nProvider lang={lang}>
         {/* autodécouverte DCAT-AP : les moissonneurs (data.gouv.fr…) suivent ce lien */}
         <link rel="alternate" type="application/rdf+xml" title="Catalogue DCAT" href={`${CKAN_PUBLIC}/catalog.xml`} />
         {dsfr && <link rel="stylesheet" precedence="default" href="/dsfr/dsfr.min.css" />}
         {css && <style dangerouslySetInnerHTML={{ __html: css }} />}
-        <a className="acces-rapide" href="#contenu">Aller au contenu</a>
+        <a className="acces-rapide" href="#contenu">{t('a11y.skip')}</a>
         {dsfr ? (
           <DsfrChrome site={site} logo={logo} navPages={navPages} session={session} footer={footer} footerPages={footerPages}>
             {children}
@@ -158,6 +160,7 @@ export default async function RootLayout({ children }) {
         {settings?.custom_js && (
           <script dangerouslySetInnerHTML={{ __html: settings.custom_js }} />
         )}
+        </I18nProvider>
       </body>
     </html>
   );

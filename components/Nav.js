@@ -1,6 +1,7 @@
 // Navigation principale : liens système + pages Directus (avec sous-menus via
 // la page parente). Sous-menus en CSS pur (:hover et :focus-within), donc
 // utilisables au clavier (RGAA 12) ; aucun JS requis.
+import { t } from '../lib/i18n';
 
 export function navEntries(navPages, options = {}) {
   // Ordre éditorial : les pages Directus (triées) d'abord, les actualités si
@@ -16,14 +17,14 @@ export function navEntries(navPages, options = {}) {
     externe: externe(p),
     children: (p.children || []).map((c) => ({ title: c.title, href: lien(c), externe: externe(c) })),
   }));
-  if (options.actualites) entries.push({ title: 'Actualités', href: '/actualites' });
-  entries.push({ title: 'Catalogue', href: '/catalogue' });
+  if (options.actualites) entries.push({ title: t('nav.actualites'), href: '/actualites' });
+  entries.push({ title: t('nav.catalogue'), href: '/catalogue' });
   return entries;
 }
 
 export default function Nav({ navPages, actualites = false }) {
   return (
-    <nav aria-label="Navigation principale">
+    <nav aria-label={t('a11y.mainNav')}>
       <ul className="menu">
         {navEntries(navPages, { actualites }).map((e) => (
           <li key={e.href} className={e.children?.length ? 'a-sous-menu' : ''}>

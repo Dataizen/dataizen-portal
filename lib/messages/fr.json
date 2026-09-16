@@ -1,0 +1,16 @@
+{
+  "meta.title": "Dataizen : données territoriales",
+  "meta.description": "Catalogue de données territoriales ouvert, souverain et open source.",
+  "a11y.skip": "Aller au contenu",
+  "a11y.mainNav": "Navigation principale",
+  "a11y.footerNav": "Liens de pied de page",
+  "nav.actualites": "Actualités",
+  "nav.catalogue": "Catalogue",
+  "nav.homeTitle": "Accueil : {site}",
+  "nav.login": "Connexion",
+  "nav.admin": "⚙️ Administration",
+  "nav.deposit": "Déposer une donnée",
+  "nav.logout": "Déconnexion",
+  "footer.default": "{site} : plateforme de données territoriales, open source et hébergée souverainement.",
+  "footer.source": "Code source"
+}
