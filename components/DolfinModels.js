@@ -90,7 +90,7 @@ export default function DolfinModels() {
     return (
       <div className="carte edition">
         <h3>{form.slug ? t('dolfin.form_edit_title') : t('dolfin.form_new_title')}</h3>
-        <label>{t('dolfin.form_label_title')}<input value={form.titre} onChange={set('titre')} placeholder={t('dolfin.form_title_ph')} />
+        <label>{t('dolfin.form_label_title')}<input value={form.titre} onChange={set('titre')} placeholder={t('dolfin.form_title_ph')} /></label>
         <label>{t('dolfin.form_label_type')}<input value={form.type} onChange={set('type')} placeholder="PointOfInterest" /></label>
         <label>{t('dolfin.form_label_desc')}<input value={form.desc} onChange={set('desc')} /></label>
         <label>{t('dolfin.form_label_fields')}<input value={form.champs} onChange={set('champs')} placeholder="name, category, address" /></label>
