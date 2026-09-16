@@ -48,12 +48,19 @@ export async function POST(request) {
   const patch = await ckan('package_patch', { id: pkg.id, extras });
   if (!patch.ok) return NextResponse.json({ error: 'échec enregistrement' }, { status: 502 });
 
-  // relancer l'harmonisation : re-soumettre les CSV du datastore (hook _harmonize_if_mapped)
-  let n = 0;
-  for (const res of (pkg.resources || [])) {
-    if ((res.format || '').toLowerCase() === 'csv' && res.datastore_active) {
-      const s = await ckan('xloader_submit', { resource_id: res.id, ignore_hash: true });
-      if (s.ok) n += 1;
+  // relancer l'harmonisation : `dolfin_regenerate` touche chaque CSV source par un
+  // resource_patch neutre, ce qui déclenche le hook _harmonize_if_mapped -> génération
+  // des sorties (NGSI-LD/CSV/GeoJSON). Fiable même quand le CSV porte xloader_skip
+  // (contrairement à xloader_submit, qui ne relance alors rien).
+  const reg = await ckan('dolfin_regenerate', { id: pkg.id });
+  let n = reg.ok ? (reg.body.result?.regenerated || 0) : 0;
+  // repli : si l'action n'est pas disponible, re-soumettre les CSV à xloader
+  if (!reg.ok) {
+    for (const res of (pkg.resources || [])) {
+      if ((res.format || '').toLowerCase() === 'csv' && res.datastore_active) {
+        const s = await ckan('xloader_submit', { resource_id: res.id, ignore_hash: true });
+        if (s.ok) n += 1;
+      }
     }
   }
   return NextResponse.json({ ok: true, resubmitted: n });
