@@ -100,13 +100,19 @@ async function Themes({ block }) {
       {block.title && <h2>{block.title}</h2>}
       {thematiques.length > 0 ? (
         <div className="vitrines">
-          {thematiques.map((t) => (
-            <a className="carte vitrine thematique" key={t.slug} href={`/pages/${t.slug}`}
-               style={t.couleur ? { borderTop: `4px solid ${t.couleur}` } : undefined}>
-              <h3>{t.icone && <span aria-hidden="true">{t.icone} </span>}{t.title}</h3>
-              {t.description && <p>{t.description}</p>}
-            </a>
-          ))}
+          {thematiques.map((t, i) => {
+            // Page dédiée si slug, sinon catalogue filtré sur le thème EU, sinon catalogue.
+            const href = t.slug
+              ? `/pages/${t.slug}`
+              : (t.theme ? `/catalogue?theme=${encodeURIComponent(t.theme)}` : '/catalogue');
+            return (
+              <a className="carte vitrine thematique" key={t.slug || t.theme || i} href={href}
+                 style={t.couleur ? { borderTop: `4px solid ${t.couleur}` } : undefined}>
+                <h3>{t.icone && <span aria-hidden="true">{t.icone} </span>}{t.title}</h3>
+                {t.description && <p>{t.description}</p>}
+              </a>
+            );
+          })}
         </div>
       ) : (
         <div className="themes">
@@ -266,6 +272,20 @@ function VideoBloc({ block }) {
   );
 }
 
+// Tableau de bord territorial (choroplèthe + sélection sur carte + panneau d'indicateurs).
+// Rend le même conteneur que les pages ; l'hydrateur global TerritoireDashboard le monte.
+function TableauBordBloc({ block }) {
+  const tb = block.config?.tableau_bord || block.tableau_bord;
+  if (!tb) return null;
+  return (
+    <section className="bloc" {...edh(block)}>
+      {block.title && <h2>{block.title}</h2>}
+      <div className="dtz-territoire" data-tb={tb} role="group"
+        aria-label={block.title || t('home.dashboard')} />
+    </section>
+  );
+}
+
 const RENDUS = {
   hero: Hero,
   texte: Texte,
@@ -281,6 +301,7 @@ const RENDUS = {
   superset: SupersetEmbed,
   carte: CarteBloc,
   graphique: GraphiqueBloc,
+  'tableau-bord': TableauBordBloc,
 };
 
 export default async function Accueil({ searchParams }) {
