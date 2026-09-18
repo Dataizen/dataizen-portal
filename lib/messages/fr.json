@@ -453,6 +453,8 @@
   "map.datasetsSingular": "{n} jeu",
   "map.departments": "Départements",
   "map.districts": "Districts",
+  "map.itl2": "Régions (ITL2)",
+  "map.localauthorities": "Collectivités locales",
   "map.noDataset": "aucun jeu",
   "map.overseas": "Outre-mer :",
   "map.regionFallback": "Région",

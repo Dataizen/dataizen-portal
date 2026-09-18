@@ -453,6 +453,8 @@
   "map.datasetsSingular": "{n} dataset",
   "map.departments": "Departments",
   "map.districts": "Districts",
+  "map.itl2": "Regions (ITL2)",
+  "map.localauthorities": "Local authorities",
   "map.noDataset": "no dataset",
   "map.overseas": "Overseas:",
   "map.regionFallback": "Region",
