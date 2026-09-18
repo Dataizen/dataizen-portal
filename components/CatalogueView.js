@@ -206,7 +206,7 @@ export default async function CatalogueView({ sp, orgs = null }) {
       <div className="layout">
         <aside>
           <Facette titre={t('catalogue.organizations')} items={r.search_facets?.organization?.items} cle="organization" params={params} />
-          <FacetteTerritoire items={r.search_facets?.extras_territoires?.items} params={params} />
+          <FacetteTerritoire items={r.search_facets?.vocab_territoires?.items} params={params} />
           <FacetteCarteTerritoire />
           <FacetteTheme params={params} />
           <Facette titre={t('catalogue.formats')} items={r.search_facets?.res_format?.items} cle="format" params={params} />
