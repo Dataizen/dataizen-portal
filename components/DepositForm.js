@@ -8,6 +8,7 @@
 import { useState, useRef, useEffect } from 'react';
 import ResumableFile from './ResumableFile';
 import { useT } from './I18nProvider';
+import { fieldLabel, fieldPlaceholder, optionLabel } from '../lib/metadata';
 
 // Parse rapide (entête + échantillon) d'un CSV/TSV côté client. Détection simple
 // du séparateur et retrait des guillemets ; suffisant pour le contexte IA.
@@ -137,16 +138,16 @@ export default function DepositForm({ admin, organizations, instanceOrg, license
 
       {fields.map((f) => (
         <div key={f.key}>
-          <label>{f.label}</label>
+          <label>{fieldLabel(f, t)}</label>
           {f.type === 'select' ? (
             <select name={f.key} value={vals[f.key] || ''} onChange={setVal(f.key)}>
               <option value="">-</option>
-              {f.options.map((o) => <option key={o} value={o}>{f.i18nOptions ? t(`${f.i18nOptions}.${o}`) : o}</option>)}
+              {f.options.map((o, i) => <option key={o} value={o}>{optionLabel(f, o, i, t)}</option>)}
             </select>
           ) : (
             <input type={f.type === 'date' ? 'date' : 'text'} name={f.key}
               value={vals[f.key] || ''} onChange={setVal(f.key)}
-              placeholder={f.placeholder || ''} maxLength={500} />
+              placeholder={fieldPlaceholder(f, t)} maxLength={500} />
           )}
         </div>
       ))}

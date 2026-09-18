@@ -3,7 +3,7 @@
 // de lib/metadata.js : en ajouter là-bas suffit pour qu'ils apparaissent ici.
 import { useState } from 'react';
 import { useT } from './I18nProvider';
-import { themeCode } from '../lib/metadata';
+import { themeCode, fieldLabel, fieldPlaceholder, optionLabel } from '../lib/metadata';
 
 export default function EditDataset({ name, title, notes, tags, extras, fields, admin, isPrivate, licenses = [], licenseId }) {
   const t = useT();
@@ -80,15 +80,15 @@ export default function EditDataset({ name, title, notes, tags, extras, fields, 
       <textarea rows={5} value={values.notes} onChange={set('notes')} />
       {(fields || []).map((f) => (
         <div key={f.key}>
-          <label>{f.label}</label>
+          <label>{fieldLabel(f, t)}</label>
           {f.type === 'select' ? (
             <select value={values[f.key]} onChange={set(f.key)}>
               <option value="">-</option>
-              {f.options.map((o) => <option key={o} value={o}>{f.i18nOptions ? t(`${f.i18nOptions}.${o}`) : o}</option>)}
+              {f.options.map((o, i) => <option key={o} value={o}>{optionLabel(f, o, i, t)}</option>)}
             </select>
           ) : (
             <input type={f.type === 'date' ? 'date' : 'text'} value={values[f.key]}
-              onChange={set(f.key)} placeholder={f.placeholder || ''} />
+              onChange={set(f.key)} placeholder={fieldPlaceholder(f, t)} />
           )}
         </div>
       ))}
