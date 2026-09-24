@@ -19,6 +19,7 @@ import RechercheIndicateur from '../components/RechercheIndicateur';
 import VisualEditing from '../components/VisualEditing';
 import Assistant from '../components/Assistant';
 import GpuStatus from '../components/GpuStatus';
+import UsageTracker from '../components/UsageTracker';
 import { t, getLang } from '../lib/i18n';
 import { I18nProvider } from '../components/I18nProvider';
 
@@ -156,6 +157,7 @@ export default async function RootLayout({ children }) {
         <EmbedTools />
         <Assistant />
         <GpuStatus />
+        <UsageTracker />
         <CookieConsent />
         {settings?.custom_js && (
           <script dangerouslySetInnerHTML={{ __html: settings.custom_js }} />
