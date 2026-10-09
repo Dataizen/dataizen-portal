@@ -377,6 +377,7 @@
   "edit.vis_public": "Público (visível no catálogo)",
   "footer.default": "{site}: plataforma de dados territoriais, open source e alojada de forma soberana.",
   "footer.source": "Código-fonte",
+  "footer.poweredBy": "Desenvolvido com Dataizen",
   "gpu.badgeTitle": "Estado da GPU soberana que alimenta o assistente e a geração por IA (suspensão após inatividade, arranque de 1 a 2 min).",
   "gpu.btn_running": "Já em funcionamento",
   "gpu.btn_start": "▶ Arrancar o GPU",

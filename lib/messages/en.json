@@ -377,6 +377,7 @@
   "edit.vis_public": "Public (visible in the catalogue)",
   "footer.default": "{site}: territorial data platform, open source and sovereignly hosted.",
   "footer.source": "Source code",
+  "footer.poweredBy": "Powered by Dataizen",
   "gpu.badgeTitle": "Status of the sovereign GPU that powers the assistant and AI generation (put to sleep after inactivity, startup 1 to 2 min).",
   "gpu.btn_running": "Already running",
   "gpu.btn_start": "▶ Start the GPU",

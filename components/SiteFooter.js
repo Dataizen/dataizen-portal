@@ -26,6 +26,13 @@ const SourceLink = () => (
   <a className="footer-source" href={SOURCE_URL} target="_blank" rel="noopener">{t('footer.source')}</a>
 );
 
+// Lien de marque « Propulsé par Dataizen » présent sur chaque instance : signature produit
+// ET backlink suivi vers la vitrine (référencement de dataizen.eu). Pas de rel=nofollow.
+const POWERED_URL = 'https://dataizen.eu';
+const PoweredBy = () => (
+  <a className="footer-powered" href={POWERED_URL} target="_blank" rel="noopener">{t('footer.poweredBy')}</a>
+);
+
 export default function SiteFooter({ links = [], text, dsfr = false }) {
   if (dsfr) {
     return (
@@ -35,6 +42,7 @@ export default function SiteFooter({ links = [], text, dsfr = false }) {
           <div className="fr-footer__bottom">
             <div className="fr-footer__bottom-copy"><p>{text}</p></div>
             <SourceLink />
+            <PoweredBy />
           </div>
         </div>
       </footer>
@@ -43,7 +51,7 @@ export default function SiteFooter({ links = [], text, dsfr = false }) {
   return (
     <footer className="site" role="contentinfo">
       <Liens links={links} className="footer-menu" />
-      <p className="footer-copy">{text} · <SourceLink /></p>
+      <p className="footer-copy">{text} · <SourceLink /> · <PoweredBy /></p>
     </footer>
   );
 }
