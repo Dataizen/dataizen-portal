@@ -1,12 +1,12 @@
 // Pied de page réutilisable (toutes instances) : un menu de liens alimenté par
 // Directus (pages marquées « afficher dans le pied de page ») + une ligne de
 // mentions. S'adapte à l'habillage courant (DSFR ou thème standard).
-import { t } from '../lib/i18n';
+import { translate, DEFAULT_LANG } from '../lib/i18n';
 
-function Liens({ links, className }) {
+function Liens({ links, className, lang = DEFAULT_LANG }) {
   if (!links?.length) return null;
   return (
-    <nav className={className} aria-label={t('a11y.footerNav')}>
+    <nav className={className} aria-label={translate(lang, 'a11y.footerNav')}>
       <ul>
         {links.map((l) => (
           <li key={l.href}>
@@ -22,27 +22,27 @@ function Liens({ links, className }) {
 // Le catalogue CKAN est sous AGPL, qui impose que l'utilisateur puisse obtenir le
 // code source correspondant. Pointe vers l'organisation qui héberge tous les dépôts.
 const SOURCE_URL = 'https://github.com/Dataizen';
-const SourceLink = () => (
-  <a className="footer-source" href={SOURCE_URL} target="_blank" rel="noopener">{t('footer.source')}</a>
+const SourceLink = ({ lang = DEFAULT_LANG }) => (
+  <a className="footer-source" href={SOURCE_URL} target="_blank" rel="noopener">{translate(lang, 'footer.source')}</a>
 );
 
 // Lien de marque « Propulsé par Dataizen » présent sur chaque instance : signature produit
 // ET backlink suivi vers la vitrine (référencement de dataizen.eu). Pas de rel=nofollow.
 const POWERED_URL = 'https://dataizen.eu';
-const PoweredBy = () => (
-  <a className="footer-powered" href={POWERED_URL} target="_blank" rel="noopener">{t('footer.poweredBy')}</a>
+const PoweredBy = ({ lang = DEFAULT_LANG }) => (
+  <a className="footer-powered" href={POWERED_URL} target="_blank" rel="noopener">{translate(lang, 'footer.poweredBy')}</a>
 );
 
-export default function SiteFooter({ links = [], text, dsfr = false }) {
+export default function SiteFooter({ links = [], text, dsfr = false, lang = DEFAULT_LANG }) {
   if (dsfr) {
     return (
       <footer className="fr-footer" role="contentinfo">
         <div className="fr-container">
-          <Liens links={links} className="footer-menu" />
+          <Liens links={links} className="footer-menu" lang={lang} />
           <div className="fr-footer__bottom">
             <div className="fr-footer__bottom-copy"><p>{text}</p></div>
-            <SourceLink />
-            <PoweredBy />
+            <SourceLink lang={lang} />
+            <PoweredBy lang={lang} />
           </div>
         </div>
       </footer>
@@ -50,8 +50,8 @@ export default function SiteFooter({ links = [], text, dsfr = false }) {
   }
   return (
     <footer className="site" role="contentinfo">
-      <Liens links={links} className="footer-menu" />
-      <p className="footer-copy">{text} · <SourceLink /> · <PoweredBy /></p>
+      <Liens links={links} className="footer-menu" lang={lang} />
+      <p className="footer-copy">{text} · <SourceLink lang={lang} /> · <PoweredBy lang={lang} /></p>
     </footer>
   );
 }

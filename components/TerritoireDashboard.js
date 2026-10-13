@@ -154,17 +154,28 @@ async function monter(el, maplibregl, echarts, t) {
   el.append(metricBar, grille);
   if (avecPanneau) el.append(sectionCat);
 
+  // Fond de carte selon le pays de l'instance : IGN Plan (France uniquement, data.geopf.fr)
+  // pour fr ; OpenStreetMap (mondial) sinon — sans quoi les tuiles IGN n'existent pas hors
+  // de France et le fond ne se met pas à jour au zoom (ex. Danemark).
+  const pays = (el.dataset.pays || 'fr').toLowerCase();
+  const fondSrc = pays === 'fr'
+    ? {
+        type: 'raster', tileSize: 256, maxzoom: 19,
+        tiles: ['https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2&STYLE=normal&TILEMATRIXSET=PM&FORMAT=image/png&TILEMATRIX={z}&TILECOL={x}&TILEROW={y}'],
+        attribution: '© <a href="https://www.ign.fr/">IGN</a> - Géoplateforme',
+      }
+    : {
+        type: 'raster', tileSize: 256, maxzoom: 19,
+        tiles: ['https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png'],
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      };
   const map = new maplibregl.Map({
     container: divCarte,
     style: {
       version: 8,
-      sources: {
-        fond: {
-          type: 'raster', tileSize: 256,
-          tiles: ['https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2&STYLE=normal&TILEMATRIXSET=PM&FORMAT=image/png&TILEMATRIX={z}&TILECOL={x}&TILEROW={y}'],
-          attribution: '© <a href="https://www.ign.fr/">IGN</a> - Géoplateforme',
-        },
-      },
+      sources: { fond: fondSrc },
       layers: [
         { id: 'bg', type: 'background', paint: { 'background-color': '#eef3f8' } },
         { id: 'fond', type: 'raster', source: 'fond' },

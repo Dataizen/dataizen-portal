@@ -567,3 +567,20 @@ dl.glossaire dd { margin: 0 0 0.4rem; padding-left: 1rem; border-left: 2px solid
 .assistant-md code { background: #eef2f7; padding: 0 0.25rem; border-radius: 3px; font-size: 0.85em; }
 .assistant-md :first-child { margin-top: 0; }
 .assistant-md :last-child { margin-bottom: 0; }
+
+/* Bouton de langue de l'interface (LangToggle) : discret, dans l'en-tête */
+.lang-toggle {
+  appearance: none;
+  border: 1px solid currentColor;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.8em;
+  line-height: 1;
+  padding: 0.2em 0.5em;
+  margin-left: 0.6em;
+  border-radius: 999px;
+  cursor: pointer;
+  opacity: 0.85;
+}
+.lang-toggle:hover, .lang-toggle:focus-visible { opacity: 1; }

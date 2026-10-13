@@ -2,11 +2,15 @@ import { listOrganizations, listLicenses, listDeposits } from '../../lib/ckan';
 import { getSession, isAdmin } from '../../lib/session';
 import { METADATA_FIELDS } from '../../lib/metadata';
 import DepositForm from '../../components/DepositForm';
-import { t } from '../../lib/i18n';
+import { getLang, translate, LANGS } from '../../lib/i18n';
+import { cookies } from 'next/headers';
 
 export const dynamic = 'force-dynamic';
 
 export default async function Deposer() {
+  const ck = (await cookies()).get('dtz_lang')?.value;
+  const lang = ck && LANGS.includes(ck) ? ck : getLang();
+  const t = (k, v) => translate(lang, k, v);
   const session = await getSession();
   if (!session) {
     return (

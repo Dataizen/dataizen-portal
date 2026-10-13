@@ -3,7 +3,7 @@ import { extrasToObject, THEME_CODES, themeCode } from '../lib/metadata';
 import { formatTaille, tailleDataset } from '../lib/format';
 import { getPays, profil } from '../lib/territoires';
 import FacetteCarteTerritoire from './FacetteCarteTerritoire';
-import { t } from '../lib/i18n';
+import { translate, DEFAULT_LANG } from '../lib/i18n';
 
 // vrai si le jeu est périmé (extra validite_fin dépassée)
 function estPerime(d, aujourdhui) {
@@ -44,7 +44,8 @@ function Facette({ titre, items, cle, params }) {
 // comme jetons propres, donc facettables). Codes traduits en noms, triés.
 // Carte-sélecteur de territoire (choisir un département ou une région) + liste
 // texte repliée comme équivalent accessible et repli sans JavaScript.
-function FacetteTerritoire({ items, params }) {
+function FacetteTerritoire({ items, params, lang = DEFAULT_LANG }) {
+  const t = (k, v) => translate(lang, k, v);
   const prof = profil(getPays());
   const depts = (items || [])
     .map((it) => ({ code: it.name, nom: prof.nom(it.name), count: it.count }))
@@ -86,7 +87,8 @@ function FacetteTerritoire({ items, params }) {
 
 // Facette Thématiques : vocabulaire EU data-theme (codes), libellés localisés. La valeur
 // dans l'URL et l'extra `theme` est le code (le filtre reste rétro-compatible côté ckan.js).
-function FacetteTheme({ params }) {
+function FacetteTheme({ params, lang = DEFAULT_LANG }) {
+  const t = (k, v) => translate(lang, k, v);
   const actif = themeCode(params.theme);
   const lien = (code) => {
     const p = new URLSearchParams(params);
@@ -106,7 +108,8 @@ function FacetteTheme({ params }) {
   );
 }
 
-function FiltreValidite({ params }) {
+function FiltreValidite({ params, lang = DEFAULT_LANG }) {
+  const t = (k, v) => translate(lang, k, v);
   const lien = (v) => {
     const p = new URLSearchParams(params);
     if (params.perime === v) p.delete('perime'); else p.set('perime', v);
@@ -124,7 +127,8 @@ function FiltreValidite({ params }) {
   );
 }
 
-function FiltreHarmonisation({ params }) {
+function FiltreHarmonisation({ params, lang = DEFAULT_LANG }) {
+  const t = (k, v) => translate(lang, k, v);
   const lien = (v) => {
     const p = new URLSearchParams(params);
     if (params.harmonise === v) p.delete('harmonise'); else p.set('harmonise', v);
@@ -142,7 +146,8 @@ function FiltreHarmonisation({ params }) {
   );
 }
 
-function FiltreUtilisation({ params }) {
+function FiltreUtilisation({ params, lang = DEFAULT_LANG }) {
+  const t = (k, v) => translate(lang, k, v);
   const lien = (v) => {
     const p = new URLSearchParams(params);
     if (params.utilise === v) p.delete('utilise'); else p.set('utilise', v);
@@ -160,7 +165,8 @@ function FiltreUtilisation({ params }) {
   );
 }
 
-export default async function CatalogueView({ sp, orgs = null }) {
+export default async function CatalogueView({ sp, orgs = null, lang = DEFAULT_LANG }) {
+  const t = (k, v) => translate(lang, k, v);
   const q = sp.q || '';
   const organization = sp.organization || '';
   const format = sp.format || '';
@@ -206,14 +212,14 @@ export default async function CatalogueView({ sp, orgs = null }) {
       <div className="layout">
         <aside>
           <Facette titre={t('catalogue.organizations')} items={r.search_facets?.organization?.items} cle="organization" params={params} />
-          <FacetteTerritoire items={r.search_facets?.vocab_territoires?.items} params={params} />
+          <FacetteTerritoire items={r.search_facets?.vocab_territoires?.items} params={params} lang={lang} />
           <FacetteCarteTerritoire />
-          <FacetteTheme params={params} />
+          <FacetteTheme params={params} lang={lang} />
           <Facette titre={t('catalogue.formats')} items={r.search_facets?.res_format?.items} cle="format" params={params} />
           <Facette titre={t('catalogue.keywords')} items={r.search_facets?.tags?.items} cle="tags" params={params} />
-          <FiltreValidite params={params} />
-          <FiltreHarmonisation params={params} />
-          <FiltreUtilisation params={params} />
+          <FiltreValidite params={params} lang={lang} />
+          <FiltreHarmonisation params={params} lang={lang} />
+          <FiltreUtilisation params={params} lang={lang} />
         </aside>
 
         <section>

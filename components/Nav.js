@@ -1,9 +1,11 @@
 // Navigation principale : liens système + pages Directus (avec sous-menus via
 // la page parente). Sous-menus en CSS pur (:hover et :focus-within), donc
 // utilisables au clavier (RGAA 12) ; aucun JS requis.
-import { t } from '../lib/i18n';
+import { translate, DEFAULT_LANG } from '../lib/i18n';
 
 export function navEntries(navPages, options = {}) {
+  const lang = options.lang || DEFAULT_LANG;
+  const t = (k, v) => translate(lang, k, v);
   // Ordre éditorial : les pages Directus (triées) d'abord, les actualités si
   // elles existent, le catalogue en dernier. Organisations et réutilisations
   // restent accessibles par leurs URLs mais sortent du menu (décision 25/07).
@@ -22,11 +24,12 @@ export function navEntries(navPages, options = {}) {
   return entries;
 }
 
-export default function Nav({ navPages, actualites = false }) {
+export default function Nav({ navPages, actualites = false, lang = DEFAULT_LANG }) {
+  const t = (k, v) => translate(lang, k, v);
   return (
     <nav aria-label={t('a11y.mainNav')}>
       <ul className="menu">
-        {navEntries(navPages, { actualites }).map((e) => (
+        {navEntries(navPages, { actualites, lang }).map((e) => (
           <li key={e.href} className={e.children?.length ? 'a-sous-menu' : ''}>
             <a href={e.href} {...(e.externe ? { target: '_blank', rel: 'noopener' } : {})}>{e.title}</a>
             {e.children?.length > 0 && (
