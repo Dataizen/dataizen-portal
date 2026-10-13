@@ -349,16 +349,33 @@ async function ajouterGeojson(map, maplibregl, c, i, bounds, is3d, ctx) {
   map.addSource(src, { type: 'geojson', data: gj });
   if (is3d) {
     const attr = c.hauteur_attr || 'hauteur';
+    const hExpr = ['coalesce', ['to-number', ['get', attr]], 0];
     map.addLayer({
       id: `${src}-3d`, type: 'fill-extrusion', source: src,
       layout: { visibility: vis },
       paint: {
         'fill-extrusion-color': col,
-        'fill-extrusion-height': ['coalesce', ['to-number', ['get', attr]], 0],
+        'fill-extrusion-height': hExpr,
         'fill-extrusion-base': 0,
         'fill-extrusion-opacity': 0.85,
       },
     });
+    // Toit factice : chapeau extrudé au sommet du bâti (base = hauteur, +toit_hauteur),
+    // d'une couleur distincte. MapLibre ne fait pas de pente ; c'est un toit plat coloré.
+    if (c.toit) {
+      const th = Number(c.toit_hauteur) || 2;
+      map.addLayer({
+        id: `${src}-toit`, type: 'fill-extrusion', source: src,
+        filter: ['==', ['geometry-type'], 'Polygon'],
+        layout: { visibility: vis },
+        paint: {
+          'fill-extrusion-color': c.toit_couleur || '#8a3b2e',
+          'fill-extrusion-base': hExpr,
+          'fill-extrusion-height': ['+', hExpr, th],
+          'fill-extrusion-opacity': 0.92,
+        },
+      });
+    }
     popupGeojson(map, maplibregl, `${src}-3d`);
     if (ctx) ctx.besoin3d = true;
   } else {
@@ -608,7 +625,7 @@ async function monter(div, maplibregl) {
       for (const m of meta) {
         if (!m.activable) continue;
         const ids = [`c${m.i}`, `c${m.i}-l`, `c${m.i}-fill`, `c${m.i}-line`,
-          `c${m.i}-circle`, `c${m.i}-3d`].filter((x) => map.getLayer(x));
+          `c${m.i}-circle`, `c${m.i}-3d`, `c${m.i}-toit`].filter((x) => map.getLayer(x));
         const b = bouton(m.label, `Afficher ou masquer : ${m.label}`, () => {
           const vis = map.getLayoutProperty(ids[0], 'visibility') !== 'none';
           ids.forEach((id) => map.setLayoutProperty(id, 'visibility', vis ? 'none' : 'visible'));

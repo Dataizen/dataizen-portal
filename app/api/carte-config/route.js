@@ -108,6 +108,9 @@ export async function GET(request) {
           couche: c.couche, couleur: c.couleur, visible: c.visible !== false,
           activable: c.activable !== false,
           geojson_rid: c.geojson_rid || '', hauteur_attr: c.hauteur_attr || 'hauteur',
+          // toit factice (bâti 3D) : chapeau extrudé au sommet, couleur/hauteur
+          toit: c.toit === true, toit_couleur: c.toit_couleur || '',
+          toit_hauteur: Number(c.toit_hauteur) || 0,
           source: await sourceDataset(CKAN, c.geojson_rid || c.dataset),
         };
         const wfs = await resoudreVecteurFichier(c);
