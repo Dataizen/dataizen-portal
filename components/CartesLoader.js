@@ -540,17 +540,20 @@ async function monter(div, maplibregl) {
       // explicites, (3) cadrage automatique sur les données affichées.
       const empriseManuelle = (conf.emprise || '').split(',').map(Number);
       const centre = (conf.centre || '').split(',').map(Number);
+      // Vue 3D (couches extrudées geojson3d) : pitch/bearing posés DANS le cadrage initial
+      // (plus fiable qu'un setPitch après fitBounds) pour que la carte s'ouvre inclinée.
+      const p3 = ctx.besoin3d ? { pitch: 55, bearing: -17 } : {};
       if (empriseManuelle.length === 4 && empriseManuelle.every(Number.isFinite)) {
         const [w, s, e, n] = empriseManuelle;
-        map.fitBounds([[w, s], [e, n]], { padding: 20, animate: false });
+        map.fitBounds([[w, s], [e, n]], { padding: 20, animate: false, ...p3 });
       } else if (centre.length === 2 && centre.every(Number.isFinite) && Number.isFinite(conf.zoom)) {
-        map.jumpTo({ center: [centre[0], centre[1]], zoom: conf.zoom });
-      } else if (!bounds.isEmpty()) map.fitBounds(bounds, { padding: 45, maxZoom: 15, animate: false });
+        map.jumpTo({ center: [centre[0], centre[1]], zoom: conf.zoom, ...p3 });
+      } else if (!bounds.isEmpty()) map.fitBounds(bounds, { padding: 45, maxZoom: 15, animate: false, ...p3 });
       else if (conf.bbox) {
         // emprise fournie (aperçu WMS : pas de géométrie côté client)
         const [w, s, e, n] = conf.bbox.split(',').map(Number);
         if ([w, s, e, n].every(Number.isFinite)) {
-          map.fitBounds([[w, s], [e, n]], { padding: 30, maxZoom: 15, animate: false });
+          map.fitBounds([[w, s], [e, n]], { padding: 30, maxZoom: 15, animate: false, ...p3 });
         }
       }
     } catch { /* bounds dégénéré */ }
