@@ -109,7 +109,10 @@ async function monter(div, maplibregl, t) {
       const nbTxt = nb
         ? ` · ${nb > 1 ? t('map.datasetsPlural', { n: nb }) : t('map.datasetsSingular', { n: nb })}`
         : ` · ${t('map.noDataset')}`;
-      pop.setLngLat(e.lngLat).setHTML(`<strong>${lib}</strong>${nbTxt}`).addTo(map);
+      // échappement du libellé (défense en profondeur, indépendant du sanitizer MapLibre)
+      const libEsc = String(lib == null ? '' : lib).replace(/[&<>"']/g, (c) => (
+        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      pop.setLngLat(e.lngLat).setHTML(`<strong>${libEsc}</strong>${nbTxt}`).addTo(map);
     });
     map.on('mouseleave', 'dep-fill', () => { map.getCanvas().style.cursor = ''; pop.remove(); });
     map.on('click', 'dep-fill', (e) => {

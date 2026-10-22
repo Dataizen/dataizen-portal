@@ -28,6 +28,14 @@ const FONDS = {
 };
 const COULEURS = ['#2f5496', '#c2571a', '#1e7a46', '#8a3ffc', '#b3261e', '#0ea5e9'];
 
+// Échappement HTML : les popups/légendes injectent des valeurs de jeux déposés
+// (clés et valeurs de propriétés, titres). On les échappe nous-mêmes avant setHTML,
+// sans dépendre du sanitizer de MapLibre (contournable, cf. GHSA-jrc7-96c5-q579).
+function esc(v) {
+  return String(v == null ? '' : v).replace(/[&<>"']/g, (c) => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
 function bouton(txt, aria, onclick, presse) {
   const b = document.createElement('button');
   b.type = 'button';
@@ -132,7 +140,7 @@ async function ajouterCatalogue(map, maplibregl, c, i, bounds) {
   map.on('click', `c${i}`, (e) => {
     const p = e.features[0].properties;
     const lignes = Object.entries(p).filter(([, v]) => v !== '' && v != null).slice(0, 8)
-      .map(([k, v]) => `<strong>${k}</strong> : ${String(v).slice(0, 120)}`).join('<br>');
+      .map(([k, v]) => `<strong>${esc(k)}</strong> : ${esc(String(v).slice(0, 120))}`).join('<br>');
     new maplibregl.Popup({ maxWidth: '320px' }).setLngLat(e.lngLat).setHTML(lignes).addTo(map);
   });
   map.on('mouseenter', `c${i}`, () => { map.getCanvas().style.cursor = 'pointer'; });
@@ -277,7 +285,7 @@ async function ajouterChoroplethe(map, maplibregl, c, i, bounds, pilote) {
       const nom = nmap.get(p._code) || p.nom || p[geoCol] || p.code || '';
       const val = (p._val === null || p._val === undefined || p._val === '') ? 'non disponible' : p._val;
       new maplibregl.Popup({ maxWidth: '260px' }).setLngLat(e.lngLat)
-        .setHTML(`<strong>${nom}</strong><br>${valCol || 'valeur'} : ${val}`).addTo(map);
+        .setHTML(`<strong>${esc(nom)}</strong><br>${esc(valCol || 'valeur')} : ${esc(val)}`).addTo(map);
     });
   }
   // surlignage réactif : reflète le territoire courant, qu'il vienne de cette carte
@@ -303,7 +311,7 @@ function legendeChoro(map, titre, min, max, teinte) {
   const el = document.createElement('div');
   el.className = 'dtz-legende-choro';
   const fmt = (n) => (Math.abs(n) >= 100 ? Math.round(n) : Math.round(n * 100) / 100);
-  el.innerHTML = `<div class="dtz-legende-titre">${titre || ''}</div>`
+  el.innerHTML = `<div class="dtz-legende-titre">${esc(titre || '')}</div>`
     + `<div class="dtz-legende-barre" style="background:linear-gradient(90deg,#eef3f8,${teinte})"></div>`
     + `<div class="dtz-legende-bornes"><span>${fmt(min)}</span><span>${fmt(max)}</span></div>`;
   cont.appendChild(el);
@@ -325,7 +333,7 @@ function popupGeojson(map, maplibregl, layerId) {
     const lignes = Object.entries(p)
       .filter(([k, v]) => !k.startsWith('_') && v !== '' && v != null)
       .slice(0, 8)
-      .map(([k, v]) => `<strong>${k}</strong> : ${String(v).slice(0, 120)}`)
+      .map(([k, v]) => `<strong>${esc(k)}</strong> : ${esc(String(v).slice(0, 120))}`)
       .join('<br>');
     if (lignes) new maplibregl.Popup({ maxWidth: '320px' }).setLngLat(e.lngLat).setHTML(lignes).addTo(map);
   });
@@ -547,7 +555,7 @@ async function monter(div, maplibregl) {
         const p = document.createElement('p');
         p.className = 'source-lien';
         p.innerHTML = 'Source : ' + srcs.map((s) =>
-          `<a href="/dataset/${encodeURIComponent(s.slug)}">${s.titre}</a>`).join(', ');
+          `<a href="/dataset/${encodeURIComponent(s.slug)}">${esc(s.titre)}</a>`).join(', ');
         div.insertAdjacentElement('afterend', p);
       }
     } catch { /* liens source optionnels */ }
