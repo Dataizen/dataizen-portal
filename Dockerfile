@@ -9,6 +9,13 @@ RUN npm audit --omit=dev --audit-level=high || true
 COPY . .
 # DSFR auto-hébergé (aucun CDN) : servi sur /dsfr par le portail
 RUN mkdir -p public/dsfr && cp -r node_modules/@gouvfr/dsfr/dist/* public/dsfr/
+# Worker ESM de MapLibre v6 : le bundler Next ne l'émet pas (il résout une URL
+# /_next/static/chunks/maplibre-gl-worker.mjs inexistante -> « Worker failed to load »).
+# On sert le worker et son fichier shared sibling nous-mêmes, et CartesLoader/
+# FacetteCarteTerritoire pointent setWorkerUrl dessus avant de créer une carte.
+RUN mkdir -p public/vendor/maplibre \
+ && cp node_modules/maplibre-gl/dist/maplibre-gl-worker.mjs \
+       node_modules/maplibre-gl/dist/maplibre-gl-shared.mjs public/vendor/maplibre/
 # Bibliothèques front auto-hébergées (aucun CDN au runtime) : Scalar (doc d'API,
 # servi sur /scalar) et ECharts (studio de visualisation, servi sur /echarts).
 # curl avec retries : le wget busybox échoue parfois sur le CDN (TLS/redirect).

@@ -142,8 +142,14 @@ export default function FacetteCarteTerritoire() {
     const divs = [...document.querySelectorAll('.dtz-facette-territoire')].filter((d) => !d.dataset.monte);
     if (!divs.length) return;
     (async () => {
-      const maplibregl = (await import('maplibre-gl')).default;
+      const _mlmod = await import('maplibre-gl');
+      const maplibregl = _mlmod.default || _mlmod;
       await import('maplibre-gl/dist/maplibre-gl.css');
+      // MapLibre v6 : worker ESM servi par nos soins (cf. CartesLoader / Dockerfile).
+      if (!window.__mlWorkerSet && maplibregl.setWorkerUrl) {
+        try { maplibregl.setWorkerUrl('/vendor/maplibre/maplibre-gl-worker.mjs'); } catch { /* ignore */ }
+        window.__mlWorkerSet = true;
+      }
       for (const d of divs) { d.dataset.monte = '1'; monter(d, maplibregl, t).catch(() => { d.style.display = 'none'; }); }
     })();
   });
