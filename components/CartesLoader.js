@@ -694,8 +694,15 @@ export default function CartesLoader() {
       .filter((d) => !d.dataset.monte);
     if (!divs.length) return;
     (async () => {
-      const maplibregl = (await import('maplibre-gl')).default;
+      const _mlmod = await import('maplibre-gl');
+      const maplibregl = _mlmod.default || _mlmod;
       await import('maplibre-gl/dist/maplibre-gl.css');
+      // MapLibre v6 : le worker ESM n'est pas émis par Next -> on sert le nôtre
+      // (public/vendor/maplibre, copié au build) et on le déclare une seule fois.
+      if (!window.__mlWorkerSet && maplibregl.setWorkerUrl) {
+        try { maplibregl.setWorkerUrl('/vendor/maplibre/maplibre-gl-worker.mjs'); } catch { /* ignore */ }
+        window.__mlWorkerSet = true;
+      }
       // protocole PMTiles (relief terrain-RGB servi en .pmtiles), enregistré une fois
       try {
         if (!window.__pmtilesEnregistre) {

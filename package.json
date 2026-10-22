@@ -14,7 +14,7 @@
     "react-dom": "19.0.0",
     "@gouvfr/dsfr": "1.14.4",
     "@directus/visual-editing": "2.1.0",
-    "maplibre-gl": "4.7.1",
+    "maplibre-gl": "6.15.0",
     "pmtiles": "4.4.1",
     "@uppy/core": "^4.4.0",
     "@uppy/dashboard": "^4.3.0",
