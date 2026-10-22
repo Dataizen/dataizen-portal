@@ -474,8 +474,14 @@ export default function TerritoireDashboard() {
     const els = [...document.querySelectorAll('.dtz-territoire')].filter((e) => !e.dataset.init);
     if (!els.length) return;
     (async () => {
-      const maplibregl = (await import('maplibre-gl')).default;
+      const _mlmod = await import('maplibre-gl');
+      const maplibregl = _mlmod.default || _mlmod;
       await import('maplibre-gl/dist/maplibre-gl.css');
+      // MapLibre v6 : worker ESM servi par nos soins (cf. CartesLoader / Dockerfile).
+      if (!window.__mlWorkerSet && maplibregl.setWorkerUrl) {
+        try { maplibregl.setWorkerUrl('/vendor/maplibre/maplibre-gl-worker.mjs'); } catch { /* ignore */ }
+        window.__mlWorkerSet = true;
+      }
       const echarts = await loadECharts();
       for (const el of els) {
         el.dataset.init = '1';
