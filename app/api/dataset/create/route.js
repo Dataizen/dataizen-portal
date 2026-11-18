@@ -36,6 +36,16 @@ export async function POST(request) {
   const org = admin && values.organization ? slugify(values.organization) : instanceOrg;
   await ckan('organization_create', { name: org, title: org });
 
+  // Admins (instance + plateforme), pour les seules alertes en cas de souci au dépôt.
+  // Plus de mail routinier à chaque dépôt : la liste des dépôts à valider reste
+  // consultable dans le portail (pages « Déposer » et « Privés »).
+  const base = process.env.NEXT_PUBLIC_BASE_URL || '';
+  const admins = [...new Set([
+    ...(process.env.PORTAL_ADMINS || '').split(','),
+    ...(process.env.PLATFORM_ADMINS || '').split(','),
+  ].map((s) => s.trim().toLowerCase()).filter(Boolean))];
+  const alertAdmins = (sujet, corps) => notify(admins, sujet, corps);
+
   // nom unique dérivé du titre
   let name = slugify(title) || `depot-${Date.now()}`;
   const exists = await ckan('package_show', { id: name });
@@ -58,6 +68,10 @@ export async function POST(request) {
     ],
   });
   if (!created.ok) {
+    await alertAdmins(`Souci de dépôt (${instanceOrg}) : échec de création « ${title} »`,
+      `La création du jeu « ${title} » a échoué.\n\n`
+      + `Déposé par : ${session.name || session.email} (${session.email})\n`
+      + `Erreur CKAN : ${JSON.stringify(created.body.error || created.status)}\n`);
     return NextResponse.json({ error: `échec création (${JSON.stringify(created.body.error || created.status)})` }, { status: 502 });
   }
 
@@ -76,7 +90,14 @@ export async function POST(request) {
       headers: { Authorization: process.env.CKAN_EDIT_TOKEN },
       body: fd,
     });
-    if (!r.ok) return NextResponse.json({ error: 'dataset créé mais échec du téléversement', name }, { status: 502 });
+    if (!r.ok) {
+      await alertAdmins(`Souci de dépôt (${instanceOrg}) : échec du téléversement « ${title} »`,
+        `Le jeu « ${title} » a été créé mais le téléversement du fichier a échoué.\n\n`
+        + `Déposé par : ${session.name || session.email} (${session.email})\n`
+        + `Fichier : ${file.name}\n`
+        + `Fiche : ${base}/dataset/${name}\n`);
+      return NextResponse.json({ error: 'dataset créé mais échec du téléversement', name }, { status: 502 });
+    }
   } else if (url && /^https?:\/\//.test(url)) {
     await ckan('resource_create', {
       package_id: name,
@@ -86,22 +107,9 @@ export async function POST(request) {
     });
   }
 
-  // Notification : un dépôt en brouillon privé est à valider par les admins d'instance.
-  const isPrivate = admin ? values.visibility !== 'public' : true;
-  if (isPrivate) {
-    const base = process.env.NEXT_PUBLIC_BASE_URL || '';
-    // admins d'instance + admins plateforme (supervision globale), dédupliqués
-    const admins = [...new Set([
-      ...(process.env.PORTAL_ADMINS || '').split(','),
-      ...(process.env.PLATFORM_ADMINS || '').split(','),
-    ].map((s) => s.trim().toLowerCase()).filter(Boolean))];
-    await notify(admins, `Nouveau dépôt à valider : ${title}`,
-      `Un nouveau jeu de données a été déposé sur l'instance « ${instanceOrg} » et attend une validation.\n\n`
-      + `Titre : ${title}\n`
-      + `Déposé par : ${session.name || session.email} (${session.email})\n\n`
-      + `Fiche : ${base}/dataset/${name}\n\n`
-      + `Vous pouvez le vérifier (contrôle qualité) puis le publier via « Valider et publier ».`);
-  }
-
+  // Plus de mail à chaque dépôt : les admins ne sont alertés qu'en cas de souci
+  // (échec de création ou de téléversement ci-dessus ; échec d'ingestion signalé
+  // côté CKAN par le dataload-router). Les dépôts à valider restent listés dans le
+  // portail (pages « Déposer » et « Privés »).
   return NextResponse.json({ ok: true, name });
 }
