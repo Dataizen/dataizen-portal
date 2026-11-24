@@ -509,6 +509,25 @@ async function monter(div, maplibregl) {
   });
   map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }));
 
+  // Pont d'édition : en iframe (back-office Payload), la carte signale qu'elle est
+  // prête (voile de chargement) et renvoie son emprise courante (bouton « cadrer sur
+  // les données »). Sans effet hors iframe (portail public).
+  if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
+    const emettre = (type) => {
+      try {
+        const b = map.getBounds();
+        window.parent.postMessage({
+          type,
+          bbox: [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()],
+          center: [map.getCenter().lng, map.getCenter().lat],
+          zoom: map.getZoom(),
+        }, '*');
+      } catch { /* ignore */ }
+    };
+    map.on('idle', () => emettre('dtz-carte-ready'));
+    map.on('moveend', () => emettre('dtz-carte-view'));
+  }
+
   // Recadre le canvas quand le conteneur change de taille (MapLibre ne suit que
   // la fenêtre) : indispensable pour les conteneurs dimensionnés après le montage,
   // p. ex. l'aperçu plein cadre en iframe (position:fixed), sinon le canvas reste
