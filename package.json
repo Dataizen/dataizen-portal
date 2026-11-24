@@ -9,17 +9,18 @@
     "start": "next start"
   },
   "dependencies": {
-    "next": "15.5.28",
-    "react": "19.0.0",
-    "react-dom": "19.0.0",
-    "@gouvfr/dsfr": "1.14.4",
     "@directus/visual-editing": "2.1.0",
-    "maplibre-gl": "6.15.0",
-    "pmtiles": "4.4.1",
+    "@gouvfr/dsfr": "1.14.4",
     "@uppy/core": "^4.4.0",
     "@uppy/dashboard": "^4.3.0",
+    "@uppy/locales": "^4.5.0",
     "@uppy/tus": "^4.2.0",
-    "@uppy/locales": "^4.5.0"
+    "maplibre-gl": "6.15.0",
+    "next": "15.5.28",
+    "pg": "^8.13.1",
+    "pmtiles": "4.4.1",
+    "react": "19.0.0",
+    "react-dom": "19.0.0"
   },
   "comment_overrides": "Corrige des vulnérabilités de dépendances transitives (scan Trivy) : DoS/ReDoS et traversée de chemin. À revoir à chaque montée de Next.",
   "overrides": {

@@ -1,20 +1,21 @@
 import { NextResponse } from 'next/server';
+import { usageEnabled, recordEvent } from '../../../lib/usage-db';
 
-// Suivi d'usage anonyme du portail public : enregistre les pages vues et les téléchargements
-// dans la collection Directus `usage_events` de l'instance. AUCUNE donnée personnelle n'est
-// stockée : ni adresse IP, ni identifiant, ni cookie. Respecte Do Not Track / Global Privacy
-// Control. Le suivi ne doit jamais casser la navigation (toute erreur est silencieuse).
+// Suivi d'usage anonyme du portail public : enregistre les pages vues et les téléchargements.
+// AUCUNE donnée personnelle n'est stockée : ni adresse IP, ni identifiant, ni cookie. Respecte
+// Do Not Track / Global Privacy Control. Le suivi ne doit jamais casser la navigation (toute
+// erreur est silencieuse).
+//
+// Store : quand USAGE_DATABASE_URI est défini (instances Payload, et à terme tout le parc),
+// on écrit dans la base `usage` dédiée, hors CMS (table events, instance en colonne). Sinon,
+// comportement historique : écriture dans la collection Directus `usage_events` de l'instance.
 export const runtime = 'nodejs';
 
 const DIRECTUS = process.env.DIRECTUS_INTERNAL_URL || 'http://directus:8055';
-// Back-office Payload : l'analytics d'usage ne reste pas dans le CMS (voir plan §2,
-// sortie des usage_events vers un flux dédié). En attendant, on n'appelle pas Directus
-// (arrêté sur ces instances) pour ne pas faire un appel perdu à chaque vue de page.
 const PAYLOAD = process.env.CMS_SOURCE === 'payload';
 const TYPES = new Set(['page', 'download', 'search']);
 
 export async function POST(request) {
-  if (PAYLOAD) return new NextResponse(null, { status: 204 });
   // Défense en profondeur : le client s'abstient déjà si l'utilisateur refuse le suivi.
   if (request.headers.get('dnt') === '1' || request.headers.get('sec-gpc') === '1') {
     return new NextResponse(null, { status: 204 });
@@ -28,6 +29,17 @@ export async function POST(request) {
   const type = TYPES.has(ev && ev.type) ? ev.type : 'page';
   const chemin = typeof (ev && ev.chemin) === 'string' ? ev.chemin.slice(0, 300) : '';
   const ref = typeof (ev && ev.ref) === 'string' && ev.ref ? ev.ref.slice(0, 200) : undefined;
+
+  // Store dédié (hors CMS) si configuré.
+  if (usageEnabled()) {
+    await recordEvent({ type, chemin, ref });
+    return new NextResponse(null, { status: 204 });
+  }
+
+  // Back-office Payload sans store configuré : ne pas appeler Directus (arrêté).
+  if (PAYLOAD) return new NextResponse(null, { status: 204 });
+
+  // Historique : collection Directus usage_events de l'instance.
   try {
     await fetch(`${DIRECTUS}/items/usage_events`, {
       method: 'POST',
