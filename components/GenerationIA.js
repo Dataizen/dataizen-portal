@@ -14,7 +14,12 @@ const ACTIONS = [
   { kind: 'page', k: 'ia.action_page', needData: false },
 ];
 
-export default function GenerationIA({ adminUrl }) {
+export default function GenerationIA({ adminUrl, payload }) {
+  // Chemin d'édition selon le back-office (Payload : /admin/collections ; Directus : /admin/content).
+  const pageHref = (id) => (payload
+    ? `${adminUrl}/admin/collections/pages/${id}`
+    : `${adminUrl}/admin/content/pages/${id}`);
+  const listHref = payload ? `${adminUrl}/admin/collections/pages` : `${adminUrl}/admin/content`;
   const t = useT();
   const [q, setQ] = useState('');
   const [items, setItems] = useState(null);
@@ -61,21 +66,21 @@ export default function GenerationIA({ adminUrl }) {
             titre: d.titre, niveau: d.niveau || '?',
             n: (d.indicateurs || []).length, ind: (d.indicateurs || []).join(', '),
           }),
-          links: adminUrl ? [{ label: t('ia.link_open_directus'), href: `${adminUrl}/admin/content/pages/${d.page_id}` }] : [],
+          links: adminUrl ? [{ label: t('ia.link_open_directus'), href: `${pageHref(d.page_id)}` }] : [],
         });
       } else if (kind === 'page') {
         setMsg({
           ok: true,
           text: t('ia.msg_page', { titre: d.titre, blocs: (d.blocs || []).join(', ') })
             + (d.datasets_decouverts ? t('ia.msg_page_discovered', { ds: (d.datasets || []).join(', ') }) : ''),
-          links: adminUrl ? [{ label: t('ia.link_open_directus'), href: `${adminUrl}/admin/content/pages/${d.page_id}` }] : [],
+          links: adminUrl ? [{ label: t('ia.link_open_directus'), href: `${pageHref(d.page_id)}` }] : [],
         });
       } else {
         const n = (d.results || []).length, errs = (d.errors || []);
         setMsg({
           ok: n > 0,
           text: t('ia.msg_elements', { n }) + (errs.length ? t('ia.msg_ignored', { m: errs.length, list: errs.map((e) => e.dataset).join(', ') }) : '') + '.',
-          links: adminUrl ? [{ label: t('ia.link_see_directus'), href: `${adminUrl}/admin/content` }] : [],
+          links: adminUrl ? [{ label: t('ia.link_see_directus'), href: listHref }] : [],
         });
       }
     } catch { setMsg({ ok: false, text: t('ia.msg_network_error') }); }

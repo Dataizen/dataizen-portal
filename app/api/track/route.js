@@ -7,9 +7,14 @@ import { NextResponse } from 'next/server';
 export const runtime = 'nodejs';
 
 const DIRECTUS = process.env.DIRECTUS_INTERNAL_URL || 'http://directus:8055';
+// Back-office Payload : l'analytics d'usage ne reste pas dans le CMS (voir plan §2,
+// sortie des usage_events vers un flux dédié). En attendant, on n'appelle pas Directus
+// (arrêté sur ces instances) pour ne pas faire un appel perdu à chaque vue de page.
+const PAYLOAD = process.env.CMS_SOURCE === 'payload';
 const TYPES = new Set(['page', 'download', 'search']);
 
 export async function POST(request) {
+  if (PAYLOAD) return new NextResponse(null, { status: 204 });
   // Défense en profondeur : le client s'abstient déjà si l'utilisateur refuse le suivi.
   if (request.headers.get('dnt') === '1' || request.headers.get('sec-gpc') === '1') {
     return new NextResponse(null, { status: 204 });

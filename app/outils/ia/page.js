@@ -21,7 +21,7 @@ export default async function OutilsIA() {
         {t('ia.intro_before')} <strong>{t('ia.intro_page')}</strong> {t('ia.intro_after')}
       </p>
       <GpuControl />
-      <GenerationIA adminUrl={process.env.NEXT_PUBLIC_ADMIN_URL} />
+      <GenerationIA adminUrl={process.env.NEXT_PUBLIC_ADMIN_URL} payload={process.env.CMS_SOURCE === 'payload'} />
     </div>
   );
 }
