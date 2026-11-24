@@ -1,4 +1,7 @@
 import { NextResponse } from 'next/server';
+import { getTableauBordPayload } from '../../../lib/payload-source';
+
+const PAYLOAD = process.env.CMS_SOURCE === 'payload';
 
 // Configuration d'un tableau de bord territorial construit dans Directus
 // (collections tableaux_bord + tb_niveaux + tb_indicateurs). Renvoie les
@@ -16,6 +19,11 @@ export async function GET(request) {
   const id = new URL(request.url).searchParams.get('id') || '';
   if (!/^\d+$/.test(id)) return NextResponse.json({ error: 'tableau invalide' }, { status: 400 });
   try {
+    if (PAYLOAD) {
+      const out = await getTableauBordPayload(id);
+      if (!out) return NextResponse.json({ error: 'introuvable' }, { status: 404 });
+      return NextResponse.json(out);
+    }
     const tr = await fetch(`${DIRECTUS}/items/tableaux_bord/${id}`, { next: { revalidate: 60 } });
     if (!tr.ok) return NextResponse.json({ error: 'introuvable' }, { status: 404 });
     const t = (await tr.json()).data;
