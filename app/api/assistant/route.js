@@ -13,10 +13,17 @@ export async function POST(request) {
   if (!q || typeof q !== 'string' || q.length > 2000) {
     return NextResponse.json({ error: 'question invalide' }, { status: 400 });
   }
-  let orgs = null;
-  try { orgs = catalogueOrgs(await getSettings()); } catch { orgs = null; }
+  let settings = null, orgs = null;
+  try { settings = await getSettings(); orgs = catalogueOrgs(settings); } catch { orgs = null; }
   const lang = getLang(); // langue de l'instance (PORTAL_LANG) : l'assistant répond dans cette langue
-  const scope = { instance: process.env.INSTANCE_NAME || null, orgs, lang };
+  // Identité de l'instance transmise à l'assistant : nom affiché du portail (site_name)
+  // + pays, pour qu'il sache de quel portail / territoire il s'agit (sinon réponse générique).
+  const scope = {
+    instance: process.env.INSTANCE_NAME || null,
+    site_name: settings?.site_name || null,
+    pays: (process.env.PORTAL_PAYS || '').toLowerCase() || null,
+    orgs, lang,
+  };
   // contexte de la page consultée : le jeu / la page courante est priorisé
   const c = context || {};
   if (typeof c.dataset === 'string' && /^[a-z0-9_-]{2,100}$/i.test(c.dataset)) {
