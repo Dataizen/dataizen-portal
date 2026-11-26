@@ -1,6 +1,6 @@
 import { Fragment } from 'react';
 import { getHomeBlocks, getActualites, getThematiques, getIndicateurs, miniMarkdown } from '../lib/directus';
-import { getDataset, searchDatasets, catalogueOrgs } from '../lib/ckan';
+import { getDataset, searchDatasets, catalogueOrgs, computeIndicateur } from '../lib/ckan';
 import { THEME_CODES, themeCode } from '../lib/metadata';
 import { assetUrl } from '../lib/themes';
 import CatalogueView from '../components/CatalogueView';
@@ -50,9 +50,18 @@ async function ChiffresCles({ block }) {
   // chiffres du config JSON, ou à défaut la collection Indicateurs de Directus
   let chiffres = block.config?.chiffres || [];
   if (!chiffres.length) {
-    chiffres = (await getIndicateurs()).map((i) => ({
-      valeur: i.valeur, libelle: [i.libelle, i.unite && `(${i.unite})`].filter(Boolean).join(' '),
-      source: i.source,
+    // indicateurs « data-driven » : valeur calculée depuis un jeu CKAN (datastore),
+    // sinon valeur saisie. Repli sur la valeur manuelle si le calcul échoue.
+    chiffres = await Promise.all((await getIndicateurs()).map(async (i) => {
+      let valeur = i.valeur;
+      if (i.mode === 'donnees') {
+        const calc = await computeIndicateur(i).catch(() => null);
+        valeur = calc != null ? calc : (i.valeur || '—');
+      }
+      return {
+        valeur, libelle: [i.libelle, i.unite && `(${i.unite})`].filter(Boolean).join(' '),
+        source: i.source,
+      };
     }));
   }
   if (!chiffres.length) return null;
