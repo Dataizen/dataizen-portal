@@ -26,6 +26,11 @@ const jsonSafe = (v, secours) => {
   try { const p = JSON.parse(v); return Array.isArray(p) ? p : secours; } catch { return secours; }
 };
 const couleurOk = (c) => (/^#[0-9a-fA-F]{6}$/.test(c || '') ? c : null);
+// Comparaison de code territorial insensible à la casse : la carte pilote (CartesLoader)
+// normalise le code sélectionné en MAJUSCULES (robustesse des codes admin, ex. « 2a »/« 2A »),
+// mais les niveaux LOCAUX ont des libellés en casse d'origine (« Centre-Ville »). On compare
+// donc les deux côtés normalisés, sinon les jauges réactives ne trouvent jamais la ligne.
+const eqCode = (a, b) => String(a ?? '').trim().toUpperCase() === String(b ?? '').trim().toUpperCase();
 
 export async function GET(request) {
   const params = new URL(request.url).searchParams;
@@ -95,7 +100,7 @@ export async function GET(request) {
       }
       // série temporelle : toutes les lignes de ce territoire, X = période
       if (g.serie_temporelle) {
-        const lignes = rows.filter((r) => String(r[codeCol]) === String(code))
+        const lignes = rows.filter((r) => eqCode(r[codeCol], code))
           .sort((a, b) => String(a[xcol]).localeCompare(String(b[xcol]), 'fr'));
         if (!lignes.length) {
           return NextResponse.json({ ...base, vide: true, message: 'Pas de série pour ce territoire.' });
@@ -105,7 +110,7 @@ export async function GET(request) {
           series: [{ name: g.titre, data: lignes.map((r) => nombre(r[ycol]) ?? 0) }] });
       }
       // série de colonnes : une valeur par colonne, pour la ligne du territoire
-      const row = rows.find((r) => String(r[codeCol]) === String(code));
+      const row = rows.find((r) => eqCode(r[codeCol], code));
       if (!row) {
         return NextResponse.json({ ...base, vide: true,
           message: 'Ce territoire n’est pas disponible à ce niveau.' });
