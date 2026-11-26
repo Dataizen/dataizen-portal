@@ -1,5 +1,5 @@
 import { Fragment } from 'react';
-import { getHomeBlocks, getActualites, getThematiques, getIndicateurs, miniMarkdown } from '../lib/directus';
+import { getHomeBlocks, getActualites, getThematiques, getIndicateurs, miniMarkdown, renderInline } from '../lib/directus';
 import { getDataset, searchDatasets, catalogueOrgs, computeIndicateur } from '../lib/ckan';
 import { THEME_CODES, themeCode } from '../lib/metadata';
 import { assetUrl } from '../lib/themes';
@@ -24,7 +24,7 @@ function Hero({ block }) {
     <section className="hero" {...edh(block)}>
       <div className="hero-corps">
         <h1>{block.title}</h1>
-        <div dangerouslySetInnerHTML={{ __html: miniMarkdown(block.content || '') }} />
+        <div dangerouslySetInnerHTML={{ __html: renderInline(block.content) }} />
       </div>
       {e?.lien && (
         <a className="hero-encart" href={e.lien}
@@ -41,7 +41,7 @@ function Texte({ block }) {
   return (
     <section className="bloc" {...edh(block)}>
       {block.title && <h2>{block.title}</h2>}
-      <div dangerouslySetInnerHTML={{ __html: miniMarkdown(block.content || '') }} />
+      <div dangerouslySetInnerHTML={{ __html: renderInline(block.content) }} />
     </section>
   );
 }
