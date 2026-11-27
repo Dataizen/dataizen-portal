@@ -14,12 +14,10 @@ const ACTIONS = [
   { kind: 'page', k: 'ia.action_page', needData: false },
 ];
 
-export default function GenerationIA({ adminUrl, payload }) {
-  // Chemin d'édition selon le back-office (Payload : /admin/collections ; Directus : /admin/content).
-  const pageHref = (id) => (payload
-    ? `${adminUrl}/admin/collections/pages/${id}`
-    : `${adminUrl}/admin/content/pages/${id}`);
-  const listHref = payload ? `${adminUrl}/admin/collections/pages` : `${adminUrl}/admin/content`;
+export default function GenerationIA({ adminUrl }) {
+  // Chemin d'édition dans l'admin Payload (collection pages).
+  const pageHref = (id) => `${adminUrl}/admin/collections/pages/${id}`;
+  const listHref = `${adminUrl}/admin/collections/pages`;
   const t = useT();
   const [q, setQ] = useState('');
   const [items, setItems] = useState(null);

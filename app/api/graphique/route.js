@@ -2,9 +2,7 @@ import { NextResponse } from 'next/server';
 import { sourceDataset } from '../../../lib/source';
 import { getGraphiquePayload } from '../../../lib/payload-source';
 
-const PAYLOAD = process.env.CMS_SOURCE === 'payload';
-
-// Configuration + données d'un graphique construit dans Directus (collection
+// Configuration + données d'un graphique construit dans le CMS Payload (collection
 // graphiques). Le calcul des séries (agrégation, tri, limite) est fait côté
 // serveur : le client ne reçoit que des catégories/valeurs prêtes à tracer.
 //
@@ -13,7 +11,6 @@ const PAYLOAD = process.env.CMS_SOURCE === 'payload';
 //  - « territoire » : le graphique se recompose pour le territoire sélectionné
 //    (param ?code=), soit en série de colonnes (structure), soit en série
 //    temporelle (filtrage par territoire, X = période), soit en jauge.
-const DIRECTUS = process.env.DIRECTUS_INTERNAL_URL || 'http://directus:8055';
 const CKAN = process.env.CKAN_INTERNAL_URL || 'http://ckan:5000';
 
 const nombre = (v) => {
@@ -39,18 +36,8 @@ export async function GET(request) {
   const ridParam = params.get('rid');
   if (!/^\d+$/.test(id)) return NextResponse.json({ error: 'graphique invalide' }, { status: 400 });
   try {
-    let g;
-    if (PAYLOAD) {
-      g = await getGraphiquePayload(id);
-      if (!g) return NextResponse.json({ error: 'graphique introuvable' }, { status: 404 });
-    } else {
-      const gr = await fetch(`${DIRECTUS}/items/graphiques/${id}`, { next: { revalidate: 60 } });
-      if (!gr.ok) return NextResponse.json({ error: 'graphique introuvable' }, { status: 404 });
-      g = (await gr.json()).data;
-      if (!g || g.status !== 'published') {
-        return NextResponse.json({ error: 'graphique non publié' }, { status: 404 });
-      }
-    }
+    const g = await getGraphiquePayload(id);
+    if (!g) return NextResponse.json({ error: 'graphique introuvable' }, { status: 404 });
     const portee = g.portee || 'global';
     // portée territoire : le rid du niveau courant (param) prime sur le dataset
     // fixe, pour lire la donnée du bon niveau (commune/EPCI/département/région).

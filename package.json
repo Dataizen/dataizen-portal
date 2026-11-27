@@ -9,7 +9,6 @@
     "start": "next start"
   },
   "dependencies": {
-    "@directus/visual-editing": "2.1.0",
     "@gouvfr/dsfr": "1.14.4",
     "@uppy/core": "^4.4.0",
     "@uppy/dashboard": "^4.3.0",

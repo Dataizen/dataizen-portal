@@ -16,7 +16,6 @@ import RapportLoader from '../components/RapportLoader';
 import BlockInserter from '../components/BlockInserter';
 import TerritoireDashboard from '../components/TerritoireDashboard';
 import RechercheIndicateur from '../components/RechercheIndicateur';
-import VisualEditing from '../components/VisualEditing';
 import Assistant from '../components/Assistant';
 import GpuStatus from '../components/GpuStatus';
 import UsageTracker from '../components/UsageTracker';
@@ -161,7 +160,6 @@ export default async function RootLayout({ children }) {
         <BlockInserter adminUrl={process.env.NEXT_PUBLIC_ADMIN_URL} />
         <TerritoireDashboard />
         <RechercheIndicateur />
-        <VisualEditing directusUrl={process.env.NEXT_PUBLIC_ADMIN_URL} />
         <Reveal />
         <MenuA11y />
         <EmbedTools />

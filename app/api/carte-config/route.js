@@ -2,10 +2,8 @@ import { NextResponse } from 'next/server';
 import { sourceDataset } from '../../../lib/source';
 import { getCartePayload } from '../../../lib/payload-source';
 
-// Configuration d'une carte construite dans le CMS (cartes + couches). Source Directus
-// par défaut, ou Payload si CMS_SOURCE=payload. Renvoyée au client pour un rendu MapLibre.
-const PAYLOAD = process.env.CMS_SOURCE === 'payload';
-const DIRECTUS = process.env.DIRECTUS_INTERNAL_URL || 'http://directus:8055';
+// Configuration d'une carte construite dans le CMS Payload (cartes + couches).
+// Renvoyée au client pour un rendu MapLibre.
 const CKAN = process.env.CKAN_INTERNAL_URL || 'http://ckan:5000';
 const CKAN_PUB = process.env.NEXT_PUBLIC_CKAN_URL || 'https://data.core.dataizen.eu';
 
@@ -64,25 +62,10 @@ export async function GET(request) {
   const id = new URL(request.url).searchParams.get('id') || '';
   if (!/^\d+$/.test(id)) return NextResponse.json({ error: 'carte invalide' }, { status: 400 });
   try {
-    let carte;
-    let couches;
-    if (PAYLOAD) {
-      const r = await getCartePayload(id);
-      if (!r) return NextResponse.json({ error: 'carte introuvable' }, { status: 404 });
-      carte = r.carte;
-      couches = r.couches;
-    } else {
-      const cr = await fetch(`${DIRECTUS}/items/cartes/${id}`, { next: { revalidate: 60 } });
-      if (!cr.ok) return NextResponse.json({ error: 'carte introuvable' }, { status: 404 });
-      carte = (await cr.json()).data;
-      if (!carte || carte.status !== 'published') {
-        return NextResponse.json({ error: 'carte non publiée' }, { status: 404 });
-      }
-      const lr = await fetch(
-        `${DIRECTUS}/items/carte_couches?filter[carte][_eq]=${id}&sort=sort&limit=50`,
-        { next: { revalidate: 60 } });
-      couches = (lr.ok ? (await lr.json()).data : []) || [];
-    }
+    const r = await getCartePayload(id);
+    if (!r) return NextResponse.json({ error: 'carte introuvable' }, { status: 404 });
+    const carte = r.carte;
+    const couches = r.couches;
     const fonds = ['osm', 'plan', 'photo'].filter((f) => carte[`propose_${f}`] !== false);
     return NextResponse.json({
       titre: carte.titre,
@@ -130,6 +113,6 @@ export async function GET(request) {
       })),
     });
   } catch {
-    return NextResponse.json({ error: 'Directus indisponible' }, { status: 502 });
+    return NextResponse.json({ error: 'carte indisponible' }, { status: 502 });
   }
 }

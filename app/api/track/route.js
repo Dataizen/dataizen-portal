@@ -6,13 +6,11 @@ import { usageEnabled, recordEvent } from '../../../lib/usage-db';
 // Do Not Track / Global Privacy Control. Le suivi ne doit jamais casser la navigation (toute
 // erreur est silencieuse).
 //
-// Store : quand USAGE_DATABASE_URI est défini (instances Payload, et à terme tout le parc),
-// on écrit dans la base `usage` dédiée, hors CMS (table events, instance en colonne). Sinon,
-// comportement historique : écriture dans la collection Directus `usage_events` de l'instance.
+// Store : quand USAGE_DATABASE_URI est défini (toutes les instances), on écrit dans la base
+// `usage` dédiée, hors CMS (table events, instance en colonne). Sans store configuré, le suivi
+// est un no-op (le CMS Directus qui recevait l'usage a été décommissionné).
 export const runtime = 'nodejs';
 
-const DIRECTUS = process.env.DIRECTUS_INTERNAL_URL || 'http://directus:8055';
-const PAYLOAD = process.env.CMS_SOURCE === 'payload';
 const TYPES = new Set(['page', 'download', 'search']);
 
 export async function POST(request) {
@@ -30,24 +28,9 @@ export async function POST(request) {
   const chemin = typeof (ev && ev.chemin) === 'string' ? ev.chemin.slice(0, 300) : '';
   const ref = typeof (ev && ev.ref) === 'string' && ev.ref ? ev.ref.slice(0, 200) : undefined;
 
-  // Store dédié (hors CMS) si configuré.
+  // Store dédié (hors CMS) si configuré, sinon no-op.
   if (usageEnabled()) {
     await recordEvent({ type, chemin, ref });
-    return new NextResponse(null, { status: 204 });
-  }
-
-  // Back-office Payload sans store configuré : ne pas appeler Directus (arrêté).
-  if (PAYLOAD) return new NextResponse(null, { status: 204 });
-
-  // Historique : collection Directus usage_events de l'instance.
-  try {
-    await fetch(`${DIRECTUS}/items/usage_events`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type, chemin, ref }),
-    });
-  } catch {
-    // silencieux
   }
   return new NextResponse(null, { status: 204 });
 }
